@@ -9,6 +9,7 @@ import {
   SUBTITLE_TEXT,
   FOOTER_DECLARATION,
 } from '@/lib/documentSpec';
+import { cn } from '@/lib/utils';
 import '@/styles/lab-document.css';
 
 export interface PreviewExperiment {
@@ -33,10 +34,11 @@ const ZOOM_LEVELS = [0.55, 0.7, 0.85, 1] as const;
 interface DocumentPreviewProps {
   data: DocumentPreviewData;
   className?: string;
+  embedded?: boolean;
 }
 
-export function DocumentPreview({ data, className }: DocumentPreviewProps) {
-  const [zoomIndex, setZoomIndex] = useState(2);
+export function DocumentPreview({ data, className, embedded }: DocumentPreviewProps) {
+  const [zoomIndex, setZoomIndex] = useState(embedded ? 1 : 2);
   const zoom = ZOOM_LEVELS[zoomIndex];
 
   const courseTitle = buildCourseTitleLine(
@@ -46,9 +48,15 @@ export function DocumentPreview({ data, className }: DocumentPreviewProps) {
   );
 
   return (
-    <div className={`lab-doc-root ${className ?? ''}`}>
+    <div
+      className={cn(
+        'lab-doc-root',
+        embedded && 'lab-doc-root--embedded',
+        className
+      )}
+    >
       <div className="lab-doc-toolbar">
-        <span className="text-xs font-medium text-muted-foreground">Preview zoom</span>
+        <span className="text-xs font-medium text-muted-foreground">Zoom</span>
         <Button
           type="button"
           variant="outline"
@@ -77,7 +85,7 @@ export function DocumentPreview({ data, className }: DocumentPreviewProps) {
           variant="ghost"
           size="sm"
           className="ml-auto gap-1 text-xs"
-          onClick={() => setZoomIndex(2)}
+          onClick={() => setZoomIndex(embedded ? 1 : 2)}
         >
           <Maximize2 className="h-3 w-3" />
           Fit
@@ -87,11 +95,7 @@ export function DocumentPreview({ data, className }: DocumentPreviewProps) {
       <div className="lab-doc-canvas-wrap">
         <div className="lab-doc-paper" style={{ transform: `scale(${zoom})` }}>
           <div className="lab-doc">
-            <img
-              className="banner"
-              src="/college-banner.png"
-              alt="College banner"
-            />
+            <img className="banner" src="/college-banner.png" alt="College banner" />
             <p className="course-title">{courseTitle}</p>
             <p className="subtitle">{SUBTITLE_TEXT}</p>
 
@@ -117,13 +121,13 @@ export function DocumentPreview({ data, className }: DocumentPreviewProps) {
               <tbody>
                 {data.experiments.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="!text-center !text-muted-foreground" style={{ fontSize: '11pt', padding: '0.4in' }}>
-                      Add experiments to see them in the table
+                    <td colSpan={6} className="cell-empty">
+                      No experiments in this preview.
                     </td>
                   </tr>
                 ) : (
                   data.experiments.map((exp) => (
-                    <tr key={exp.experimentNo}>
+                    <tr key={`${exp.experimentNo}-${exp.qrImage ?? exp.githubLink}`}>
                       <td className="cell-exp">{padExpNo(exp.experimentNo)}</td>
                       <td className="cell-date">{formatTableDate(exp.experimentDate)}</td>
                       <td className="cell-name">
@@ -133,14 +137,14 @@ export function DocumentPreview({ data, className }: DocumentPreviewProps) {
                             {exp.githubLink}
                           </a>
                         ) : (
-                          <span style={{ fontSize: '11pt', color: '#888' }}>GitHub URL</span>
+                          <span className="link-placeholder">GitHub URL</span>
                         )}
                       </td>
                       <td className="cell-qr">
                         {exp.qrImage ? (
                           <img src={`${API_URL}${exp.qrImage}`} alt="QR" />
                         ) : (
-                          <span style={{ fontSize: '9pt', color: '#aaa' }}>QR</span>
+                          <span className="qr-placeholder">QR</span>
                         )}
                       </td>
                       <td className="cell-mark" />
@@ -152,12 +156,20 @@ export function DocumentPreview({ data, className }: DocumentPreviewProps) {
             </table>
 
             <p className="footer-declaration">{FOOTER_DECLARATION}</p>
-            <div className="footer-details">
-              <div>Name : {data.studentName || '—'}</div>
-              <div className="reg">Register Number : {data.registerNumber || '—'}</div>
-              <div className="sig">Learner&apos;s Signature</div>
-              <div className="date-row">Date :</div>
-            </div>
+            <table className="footer-grid">
+              <tbody>
+                <tr>
+                  <td className="footer-left">Name : {data.studentName || '—'}</td>
+                  <td className="footer-right">
+                    Register Number : {data.registerNumber || '—'}
+                  </td>
+                </tr>
+                <tr className="footer-spacer">
+                  <td className="footer-left">Date :</td>
+                  <td className="footer-right">Learner&apos;s Signature</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>

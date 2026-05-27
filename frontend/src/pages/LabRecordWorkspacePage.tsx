@@ -16,12 +16,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
-function newRow(no: number): ExperimentRowState {
+function newRow(): Omit<ExperimentRowState, 'experimentNo'> {
   return {
     localId: crypto.randomUUID(),
-    experimentNo: no,
     experimentName: '',
-    experimentDate: new Date().toISOString().slice(0, 10),
+    experimentDate: '',
     githubLink: '',
   };
 }
@@ -30,7 +29,7 @@ export function LabRecordWorkspacePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [subjectId, setSubjectId] = useState<string | undefined>(id);
-  const [rows, setRows] = useState<ExperimentRowState[]>([newRow(1)]);
+  const [rows, setRows] = useState<Omit<ExperimentRowState, 'experimentNo'>[]>([newRow()]);
   const [loading, setLoading] = useState(Boolean(id));
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
@@ -61,14 +60,15 @@ export function LabRecordWorkspacePage() {
       });
       if (data.experiments.length > 0) {
         setRows(
-          data.experiments.map((e) => ({
-            localId: e._id,
-            _id: e._id,
-            experimentNo: e.experimentNo,
-            experimentName: e.experimentName,
-            experimentDate: e.experimentDate.slice(0, 10),
-            githubLink: e.githubLink,
-          }))
+          data.experiments
+            .sort((a, b) => a.experimentNo - b.experimentNo)
+            .map((e) => ({
+              localId: e._id,
+              _id: e._id,
+              experimentName: e.experimentName,
+              experimentDate: e.experimentDate ? e.experimentDate.slice(0, 10) : '',
+              githubLink: e.githubLink,
+            }))
         );
       }
     } finally {
@@ -85,7 +85,7 @@ export function LabRecordWorkspacePage() {
   };
 
   const addRow = () => {
-    setRows((prev) => [...prev, newRow(prev.length + 1)]);
+    setRows((prev) => [...prev, newRow()]);
   };
 
   const removeRow = (localId: string) => {
@@ -102,11 +102,12 @@ export function LabRecordWorkspacePage() {
       }
     }
 
-    for (const row of rows) {
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
       const payload = {
-        experimentNo: row.experimentNo,
+        experimentNo: i + 1,
         experimentName: row.experimentName.trim(),
-        experimentDate: row.experimentDate,
+        experimentDate: row.experimentDate || undefined,
         githubLink: row.githubLink.trim(),
       };
       if (row._id) {
@@ -122,10 +123,11 @@ export function LabRecordWorkspacePage() {
     const valid = await form.trigger();
     if (!valid) return;
 
-    for (const row of rows) {
-      const result = experimentRowSchema.safeParse(row);
+    for (let i = 0; i < rows.length; i++) {
+      const rowData = { ...rows[i], experimentNo: i + 1 };
+      const result = experimentRowSchema.safeParse(rowData);
       if (!result.success) {
-        setError(result.error.errors[0]?.message ?? 'Complete all experiment fields');
+        setError(`Row ${i + 1}: ${result.error.errors[0]?.message ?? 'Complete required fields'}`);
         return;
       }
     }
@@ -169,14 +171,11 @@ export function LabRecordWorkspacePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-12 md:py-16">
+    <div className="mx-auto w-full max-w-4xl px-6 py-12 md:py-16">
       <header className="mb-12">
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
           {id ? 'Edit lab record' : 'New lab record'}
         </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Fill in your details, then generate a print-ready preview.
-        </p>
       </header>
 
       {error && (
@@ -207,11 +206,6 @@ export function LabRecordWorkspacePage() {
                 className="h-11 border-border bg-background"
                 {...form.register('subjectLine')}
               />
-              {form.formState.errors.subjectLine && (
-                <p className="text-xs text-destructive">
-                  {form.formState.errors.subjectLine.message}
-                </p>
-              )}
             </div>
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
@@ -223,11 +217,6 @@ export function LabRecordWorkspacePage() {
                   className="h-11 border-border bg-background"
                   {...form.register('studentName')}
                 />
-                {form.formState.errors.studentName && (
-                  <p className="text-xs text-destructive">
-                    {form.formState.errors.studentName.message}
-                  </p>
-                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="registerNumber" className="text-sm font-medium">
@@ -238,11 +227,6 @@ export function LabRecordWorkspacePage() {
                   className="h-11 border-border bg-background"
                   {...form.register('registerNumber')}
                 />
-                {form.formState.errors.registerNumber && (
-                  <p className="text-xs text-destructive">
-                    {form.formState.errors.registerNumber.message}
-                  </p>
-                )}
               </div>
             </div>
           </div>
@@ -260,62 +244,55 @@ export function LabRecordWorkspacePage() {
           </div>
 
           <div className="space-y-3">
-            {rows.map((row) => (
+            {rows.map((row, index) => (
               <div
                 key={row.localId}
-                className="grid gap-3 border border-border bg-card p-4 sm:grid-cols-12 sm:items-end"
+                className="flex items-start gap-3 border border-border bg-card p-4 transition-all focus-within:ring-1 focus-within:ring-ring"
               >
-                <div className="space-y-1.5 sm:col-span-1">
-                  <Label className="text-xs text-muted-foreground">No.</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    className="h-10 border-border bg-background"
-                    value={row.experimentNo}
-                    onChange={(e) =>
-                      updateRow(row.localId, { experimentNo: Number(e.target.value) || 1 })
-                    }
-                  />
+                <div className="flex h-10 w-8 items-center justify-center text-muted-foreground">
+                  <span className="text-sm font-medium">{index + 1}</span>
                 </div>
-                <div className="space-y-1.5 sm:col-span-2">
-                  <Label className="text-xs text-muted-foreground">Date</Label>
-                  <Input
-                    type="date"
-                    className="h-10 border-border bg-background"
-                    value={row.experimentDate}
-                    onChange={(e) => updateRow(row.localId, { experimentDate: e.target.value })}
-                  />
+                
+                <div className="grid flex-1 gap-3 sm:grid-cols-12 sm:items-end">
+                  <div className="space-y-1.5 sm:col-span-3">
+                    <Label className="text-xs text-muted-foreground">Date (Optional)</Label>
+                    <Input
+                      type="date"
+                      className="h-10 border-border bg-background"
+                      value={row.experimentDate}
+                      onChange={(e) => updateRow(row.localId, { experimentDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-4">
+                    <Label className="text-xs text-muted-foreground">Experiment</Label>
+                    <Input
+                      className="h-10 border-border bg-background"
+                      placeholder="Experiment name"
+                      value={row.experimentName}
+                      onChange={(e) => updateRow(row.localId, { experimentName: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-5">
+                    <Label className="text-xs text-muted-foreground">GitHub URL</Label>
+                    <Input
+                      className="h-10 border-border bg-background"
+                      placeholder="https://github.com/user/repo"
+                      value={row.githubLink}
+                      onChange={(e) => updateRow(row.localId, { githubLink: e.target.value })}
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1.5 sm:col-span-3">
-                  <Label className="text-xs text-muted-foreground">Experiment</Label>
-                  <Input
-                    className="h-10 border-border bg-background"
-                    placeholder="Experiment name"
-                    value={row.experimentName}
-                    onChange={(e) => updateRow(row.localId, { experimentName: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-1.5 sm:col-span-5">
-                  <Label className="text-xs text-muted-foreground">GitHub URL</Label>
-                  <Input
-                    className="h-10 border-border bg-background"
-                    placeholder="https://github.com/user/repo"
-                    value={row.githubLink}
-                    onChange={(e) => updateRow(row.localId, { githubLink: e.target.value })}
-                  />
-                </div>
-                <div className="flex justify-end sm:col-span-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 text-muted-foreground hover:text-destructive"
-                    onClick={() => removeRow(row.localId)}
-                    disabled={rows.length <= 1}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="mt-6 h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeRow(row.localId)}
+                  disabled={rows.length <= 1}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             ))}
           </div>

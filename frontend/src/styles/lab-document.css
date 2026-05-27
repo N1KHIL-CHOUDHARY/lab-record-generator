@@ -70,15 +70,18 @@
   margin-bottom: 0.22in;
 }
 
+/* Replace the specific table definitions with this snippet */
+
 .lab-doc table.lab-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  border: 1px solid #000;
 }
 
 .lab-doc table.lab-table th,
 .lab-doc table.lab-table td {
-  border: 1px solid #000;
+  border: 1px solid #000 !important;
   vertical-align: top;
   padding: 0.08in;
   word-wrap: break-word;
@@ -148,22 +151,55 @@
   line-height: 1.35;
 }
 
-.lab-doc .footer-details {
+.lab-doc table.footer-grid {
+  width: 100%;
+  border-collapse: collapse;
   margin-top: 0.28in;
   font-size: 11pt;
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 0.12in 0.2in;
 }
 
-.lab-doc .footer-details .reg {
-  text-align: center;
+.lab-doc table.footer-grid td {
+  border: none;
+  padding: 0.08in 0;
+  vertical-align: top;
+  width: 50%;
 }
 
-.lab-doc .footer-details .sig {
+.lab-doc table.footer-grid .footer-left {
+  text-align: left;
+}
+
+.lab-doc table.footer-grid .footer-right {
   text-align: right;
 }
 
-.lab-doc .footer-details .date-row {
-  margin-top: 0.22in;
+.lab-doc table.footer-grid tr.footer-spacer td {
+  padding-top: 0.14in;
+}
+
+.lab-doc-root--embedded {
+  background: #fafafa;
+  min-height: auto;
+  padding: 1rem;
+}
+
+.lab-doc-root--embedded .lab-doc-canvas-wrap {
+  max-width: none;
+}
+
+.lab-doc .cell-empty {
+  text-align: center;
+  font-size: 11pt;
+  color: #888;
+  padding: 0.4in;
+}
+
+.lab-doc .link-placeholder {
+  font-size: 11pt;
+  color: #888;
+}
+
+.lab-doc .qr-placeholder {
+  font-size: 9pt;
+  color: #aaa;
 }

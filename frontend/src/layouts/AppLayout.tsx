@@ -25,7 +25,7 @@ export function AppLayout() {
     <div className="flex h-full flex-col">
       <div className="border-b border-border px-6 py-6">
         <Link to="/records/new" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center border border-foreground bg-foreground text-background">
+          <div className="flex h-9 w-9 items-center justify-center text-foreground">
             <FlaskConical className="h-4 w-4" />
           </div>
           <span className="text-sm font-semibold tracking-tight">Lab Record</span>

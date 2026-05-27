@@ -30,7 +30,7 @@ export function LandingPage() {
     <div className="min-h-screen bg-background">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
         <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl text-foreground">
             <FlaskConical className="h-5 w-5" />
           </div>
           <span className="font-semibold">Smart Lab Record</span>

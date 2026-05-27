@@ -100,10 +100,11 @@ export function getLabRecordStyles(): string {
       border-collapse: collapse;
       table-layout: fixed;
       margin: 0 auto;
+      border: 1px solid #000;
     }
     table.lab-table th,
     table.lab-table td {
-      border: ${TABLE.borderPt}px solid #000;
+      border: 1px solid #000 !important;
       vertical-align: top;
       padding: ${TABLE.cellPaddingIn}in;
       word-wrap: break-word;
@@ -165,16 +166,11 @@ export function getLabRecordStyles(): string {
       margin-top: 0.28in;
       font-size: ${FOOTER.fontPt}pt;
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 0.12in 0.2in;
-      align-items: end;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.22in 0.2in;
     }
-    .footer-details .name { grid-column: 1; }
-    .footer-details .reg { grid-column: 2; text-align: center; }
-    .footer-details .sig { grid-column: 3; text-align: right; }
-    .footer-details .date-row {
-      grid-column: 1;
-      margin-top: 0.22in;
+    .footer-details .reg, .footer-details .sig {
+      text-align: right;
     }
   `;
 }
@@ -195,7 +191,7 @@ export function buildLabRecordHtml(data: LabRecordData, options?: { embedStyles?
       return `
       <tr>
         <td class="cell-exp">${padExpNo(exp.experimentNo)}</td>
-        <td class="cell-date">${formatTableDate(exp.experimentDate)}</td>
+        <td class="cell-date">${exp.experimentDate ? formatTableDate(exp.experimentDate) : ''}</td>
         <td class="cell-name">
           <div class="exp-title">${escapeHtml(exp.experimentName)}</div>
           <a href="${escapeHtml(exp.githubLink)}">${escapeHtml(exp.githubLink)}</a>
@@ -245,8 +241,8 @@ export function buildLabRecordHtml(data: LabRecordData, options?: { embedStyles?
     <div class="footer-details">
       <div class="name">Name : ${escapeHtml(data.studentName)}</div>
       <div class="reg">Register Number : ${escapeHtml(data.registerNumber)}</div>
+      <div class="date">Date :</div>
       <div class="sig">Learner's Signature</div>
-      <div class="date-row">Date :</div>
     </div>
   </div>
 </body>

@@ -5,7 +5,7 @@ export const createExperimentValidation = [
   param('subjectId').isMongoId().withMessage('Invalid subject ID'),
   body('experimentNo').isInt({ min: 1 }).withMessage('Experiment number must be a positive integer'),
   body('experimentName').trim().notEmpty().withMessage('Experiment name is required'),
-  body('experimentDate').isISO8601().withMessage('Valid experiment date is required'),
+  body('experimentDate').optional({ checkFalsy: true }).isISO8601().withMessage('Valid experiment date is required'),
   body('githubLink')
     .trim()
     .notEmpty()
@@ -20,10 +20,10 @@ export const createExperimentValidation = [
 
 export const updateExperimentValidation = [
   param('id').isMongoId().withMessage('Invalid experiment ID'),
-  body('experimentName').optional().trim().notEmpty(),
-  body('experimentDate').optional().isISO8601(),
+  body('experimentName').optional({ checkFalsy: true }).trim().notEmpty(),
+  body('experimentDate').optional({ checkFalsy: true }).isISO8601().withMessage('Valid experiment date is required'),
   body('githubLink')
-    .optional()
+    .optional({ checkFalsy: true })
     .trim()
     .custom((value) => {
       if (value && !isValidGitHubUrl(value)) {
