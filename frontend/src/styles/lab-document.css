@@ -1,9 +1,9 @@
 /* College lab record — matches backend export template exactly */
 
 .lab-doc-root {
-  background: #e8eaed;
+  background: #fafafa;
   min-height: 100%;
-  padding: 1.5rem;
+  padding: 2rem 1.5rem 3rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -30,9 +30,7 @@
 
 .lab-doc-paper {
   background: #fff;
-  box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.08),
-    0 12px 40px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06), 0 8px 30px rgba(0, 0, 0, 0.08);
   transform-origin: top center;
   transition: transform 0.2s ease;
   width: 8.27in;

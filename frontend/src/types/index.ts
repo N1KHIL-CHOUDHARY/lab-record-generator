@@ -32,6 +32,7 @@ export interface Experiment {
 
 export interface RecordItem {
   _id: string;
+  subjectId: string;
   subjectName: string;
   subjectCode: string;
   subjectCodeAlt?: string;
@@ -62,4 +63,13 @@ export interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
+}
+
+export interface ExperimentRowState {
+  localId: string;
+  _id?: string;
+  experimentNo: number;
+  experimentName: string;
+  experimentDate: string;
+  githubLink: string;
 }

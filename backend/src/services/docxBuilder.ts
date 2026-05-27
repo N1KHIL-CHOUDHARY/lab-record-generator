@@ -15,7 +15,6 @@ import {
   ExternalHyperlink,
   VerticalAlign,
   HeightRule,
-  TableLayoutType,
 } from 'docx';
 import {
   BANNER,
@@ -96,9 +95,7 @@ async function loadBannerBuffer(): Promise<Buffer | null> {
   for (const p of tryPaths) {
     try {
       return await fs.readFile(p);
-    } catch {
-      /* try next */
-    }
+    } catch {}
   }
   return null;
 }
@@ -120,6 +117,7 @@ function headerRow(): TableRow {
   return new TableRow({
     height: { value: inchesToTwip(TABLE.headerHeightIn), rule: HeightRule.ATLEAST },
     tableHeader: true,
+    cantSplit: true,
     children: headers.map(
       (text, i) =>
         new TableCell({
@@ -231,6 +229,7 @@ function experimentRow(
 
   return new TableRow({
     height: { value: inchesToTwip(TABLE.bodyMinHeightIn), rule: HeightRule.ATLEAST },
+    cantSplit: true,
     children: cells,
   });
 }
@@ -299,12 +298,13 @@ export async function buildLabRecordDocx(data: LabRecordData): Promise<Buffer> {
   children.push(
     new Table({
       width: { size: totalWidth, type: WidthType.DXA },
-      layout: TableLayoutType.FIXED,
       columnWidths: widths,
       borders: TABLE_BORDERS,
       rows: bodyRows,
     })
   );
+
+  const directColumnWidth = Math.floor(totalWidth / 2);
 
   children.push(
     new Paragraph({
@@ -313,13 +313,14 @@ export async function buildLabRecordDocx(data: LabRecordData): Promise<Buffer> {
     }),
     new Table({
       width: { size: totalWidth, type: WidthType.DXA },
-      layout: TableLayoutType.FIXED,
+      columnWidths: [directColumnWidth, directColumnWidth],
       borders: FOOTER_TABLE_BORDERS,
       rows: [
         new TableRow({
+          cantSplit: true,
           children: [
             new TableCell({
-              width: { size: Math.floor(totalWidth / 3), type: WidthType.DXA },
+              width: { size: directColumnWidth, type: WidthType.DXA },
               borders: FOOTER_TABLE_BORDERS,
               children: [
                 new Paragraph({
@@ -329,32 +330,25 @@ export async function buildLabRecordDocx(data: LabRecordData): Promise<Buffer> {
               ],
             }),
             new TableCell({
-              width: { size: Math.floor(totalWidth / 3), type: WidthType.DXA },
+              width: { size: directColumnWidth, type: WidthType.DXA },
               borders: FOOTER_TABLE_BORDERS,
               children: [
                 new Paragraph({
-                  alignment: AlignmentType.CENTER,
+                  alignment: AlignmentType.RIGHT,
+                  spacing: { before: inchesToTwip(0.28) },
                   children: [
                     timesRun(`Register Number : ${data.registerNumber}`, { sizePt: FOOTER.fontPt }),
                   ],
                 }),
               ],
             }),
-            new TableCell({
-              width: { size: Math.floor(totalWidth / 3), type: WidthType.DXA },
-              borders: FOOTER_TABLE_BORDERS,
-              children: [
-                new Paragraph({
-                  alignment: AlignmentType.RIGHT,
-                  children: [timesRun("Learner's Signature", { sizePt: FOOTER.fontPt })],
-                }),
-              ],
-            }),
           ],
         }),
         new TableRow({
+          cantSplit: true,
           children: [
             new TableCell({
+              width: { size: directColumnWidth, type: WidthType.DXA },
               borders: FOOTER_TABLE_BORDERS,
               children: [
                 new Paragraph({
@@ -364,9 +358,15 @@ export async function buildLabRecordDocx(data: LabRecordData): Promise<Buffer> {
               ],
             }),
             new TableCell({
-              columnSpan: 2,
+              width: { size: directColumnWidth, type: WidthType.DXA },
               borders: FOOTER_TABLE_BORDERS,
-              children: [new Paragraph({ children: [timesRun('')] })],
+              children: [
+                new Paragraph({
+                  alignment: AlignmentType.RIGHT,
+                  spacing: { before: inchesToTwip(0.22) },
+                  children: [timesRun("Learner's Signature", { sizePt: FOOTER.fontPt })],
+                }),
+              ],
             }),
           ],
         }),
