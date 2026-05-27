@@ -1,0 +1,171 @@
+/* College lab record — matches backend export template exactly */
+
+.lab-doc-root {
+  background: #e8eaed;
+  min-height: 100%;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lab-doc-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  width: 100%;
+  max-width: 52rem;
+}
+
+.lab-doc-canvas-wrap {
+  overflow: auto;
+  width: 100%;
+  max-width: 52rem;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 2rem;
+}
+
+.lab-doc-paper {
+  background: #fff;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.08),
+    0 12px 40px rgba(0, 0, 0, 0.12);
+  transform-origin: top center;
+  transition: transform 0.2s ease;
+  width: 8.27in;
+  min-height: 11.69in;
+  padding: 0.45in 0.5in;
+  color: #000;
+  font-family: 'Times New Roman', Times, serif;
+}
+
+.lab-doc {
+  width: 100%;
+  max-width: 7.5in;
+  margin: 0 auto;
+}
+
+.lab-doc .banner {
+  display: block;
+  width: 7.4in;
+  height: 1.65in;
+  object-fit: contain;
+  margin: 0 auto 0.18in;
+}
+
+.lab-doc .course-title {
+  font-size: 20pt;
+  font-weight: bold;
+  text-align: center;
+  margin-top: 0.1in;
+  margin-bottom: 0.18in;
+  line-height: 1.2;
+}
+
+.lab-doc .subtitle {
+  font-size: 16pt;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 0.22in;
+}
+
+.lab-doc table.lab-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.lab-doc table.lab-table th,
+.lab-doc table.lab-table td {
+  border: 1px solid #000;
+  vertical-align: top;
+  padding: 0.08in;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+.lab-doc table.lab-table th {
+  font-size: 13pt;
+  font-weight: bold;
+  text-align: center;
+  vertical-align: middle;
+  height: 0.52in;
+}
+
+.lab-doc table.lab-table tbody tr {
+  min-height: 1.42in;
+}
+
+.lab-doc table.lab-table tbody td {
+  font-size: 13pt;
+}
+
+.lab-doc col.col-exp { width: 0.7in; }
+.lab-doc col.col-date { width: 1in; }
+.lab-doc col.col-name { width: 3.15in; }
+.lab-doc col.col-qr { width: 1.05in; }
+.lab-doc col.col-mark { width: 0.65in; }
+.lab-doc col.col-sig { width: 0.95in; }
+
+.lab-doc .cell-exp {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.lab-doc .cell-name .exp-title {
+  margin-bottom: 0.08in;
+}
+
+.lab-doc .cell-name a {
+  color: #0563c1;
+  text-decoration: underline;
+  font-size: 11pt;
+  word-break: break-all;
+  line-height: 1.25;
+}
+
+.lab-doc .cell-qr {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.lab-doc .cell-qr img {
+  width: 0.72in;
+  height: 0.72in;
+  display: block;
+  margin: 0 auto;
+}
+
+.lab-doc .cell-mark,
+.lab-doc .cell-sig {
+  min-height: 1.42in;
+}
+
+.lab-doc .footer-declaration {
+  font-size: 11pt;
+  margin-top: 0.18in;
+  line-height: 1.35;
+}
+
+.lab-doc .footer-details {
+  margin-top: 0.28in;
+  font-size: 11pt;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.12in 0.2in;
+}
+
+.lab-doc .footer-details .reg {
+  text-align: center;
+}
+
+.lab-doc .footer-details .sig {
+  text-align: right;
+}
+
+.lab-doc .footer-details .date-row {
+  margin-top: 0.22in;
+}
