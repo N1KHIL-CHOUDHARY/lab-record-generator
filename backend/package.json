@@ -10,6 +10,8 @@
     "lint": "eslint src --ext .ts"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.8.1",
+    "@types/react": "^19.2.18",
     "cors": "^2.8.5",
     "docx": "^9.5.0",
     "dotenv": "^16.5.0",
@@ -23,7 +25,8 @@
     "mongoose": "^8.15.1",
     "nanoid": "^3.3.11",
     "puppeteer": "^24.10.0",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "react": "^19.2.8"
   },
   "devDependencies": {
     "@types/cors": "^2.8.18",
