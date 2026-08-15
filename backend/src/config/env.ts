@@ -15,7 +15,7 @@ export const env = {
   nodeEnv: process.env.NODE_ENV || 'development',
   appUrl: process.env.APP_URL || 'http://localhost:5000',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
-  mongodbUri: process.env.MONGODB_URI || '',
+  mongodbUri: process.env.MONGODB_URI || process.env.Mongodb_URI || '',
   jwtSecret: process.env.JWT_SECRET || 'dev-secret-change-me',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   firebase: {
