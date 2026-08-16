@@ -3,7 +3,7 @@ import { Record } from '../models/Record.js';
 import { Subject } from '../models/Subject.js';
 import { Experiment } from '../models/Experiment.js';
 import { AppError } from '../utils/AppError.js';
-import { exportDocx, exportPdf, ExportData } from './exportService.js';
+import { exportDocx, exportPdf, generatePdfBuffer, ExportData } from './exportService.js';
 import { env } from '../config/env.js';
 
 const MAX_RECORDS_PER_USER = 10;
@@ -19,7 +19,10 @@ async function trimRecordHistory(userId: string): Promise<void> {
   }
 }
 
-function buildExportData(subject: InstanceType<typeof Subject>, experiments: InstanceType<typeof Experiment>[]): ExportData {
+function buildExportData(
+  subject: InstanceType<typeof Subject>,
+  experiments: InstanceType<typeof Experiment>[]
+): ExportData {
   return {
     subjectCode: subject.subjectCode,
     subjectCodeAlt: subject.subjectCodeAlt,
@@ -31,6 +34,7 @@ function buildExportData(subject: InstanceType<typeof Subject>, experiments: Ins
       experimentName: e.experimentName,
       experimentDate: e.experimentDate,
       githubLink: e.githubLink,
+      qrShortId: e.qrShortId,
       qrImage: e.qrImage,
     })),
   };
@@ -86,6 +90,52 @@ export async function generateRecord(userId: string, subjectId: string) {
   await trimRecordHistory(userId);
 
   return record;
+}
+
+export async function getRecordPdfBuffer(userId: string, recordId: string): Promise<Buffer> {
+  const record = await Record.findOne({ _id: recordId, userId });
+
+  if (!record) {
+    throw new AppError('Record not found', 404);
+  }
+
+  const exportData: ExportData = {
+    subjectCode: record.subjectCode,
+    subjectCodeAlt: record.subjectCodeAlt,
+    subjectName: record.subjectName,
+    studentName: record.studentName || '',
+    registerNumber: record.registerNumber || '',
+    experiments: record.experiments.map((e) => ({
+      experimentNo: e.experimentNo,
+      experimentName: e.experimentName,
+      experimentDate: e.experimentDate,
+      githubLink: e.githubLink,
+      qrShortId: e.qrShortId,
+      qrImage: e.qrImage,
+    })),
+  };
+
+  return generatePdfBuffer(exportData);
+}
+
+export async function getSubjectPdfBuffer(userId: string, subjectId: string): Promise<Buffer> {
+  const subject = await Subject.findOne({ _id: subjectId, userId });
+
+  if (!subject) {
+    throw new AppError('Subject not found', 404);
+  }
+
+  const experiments = await Experiment.find({ subjectId, userId }).sort({
+    order: 1,
+    experimentNo: 1,
+  });
+
+  if (experiments.length === 0) {
+    throw new AppError('Add at least one experiment before generating a record', 400);
+  }
+
+  const exportData = buildExportData(subject, experiments);
+  return generatePdfBuffer(exportData);
 }
 
 export async function getPreviewHtml(userId: string, subjectId: string): Promise<string> {
