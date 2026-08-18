@@ -100,7 +100,8 @@ async function loadBannerBuffer(): Promise<Buffer | null> {
   return null;
 }
 
-async function readQrBuffer(qrImagePath: string): Promise<Buffer | null> {
+async function readQrBuffer(qrImagePath?: string): Promise<Buffer | null> {
+  if (!qrImagePath) return null;
   try {
     const relativePath = qrImagePath.startsWith('/') ? qrImagePath.slice(1) : qrImagePath;
     const fullPath = path.join(process.cwd(), relativePath);
