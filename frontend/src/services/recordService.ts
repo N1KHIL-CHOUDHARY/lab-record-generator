@@ -19,3 +19,17 @@ export async function getHistory() {
 export async function deleteRecord(id: string) {
   await api.delete(`/history/${id}`);
 }
+
+export async function fetchRecordPdfBlob(recordId: string): Promise<Blob> {
+  const response = await api.get(`/records/${recordId}/pdf`, {
+    responseType: 'blob',
+  });
+  return response.data;
+}
+
+export async function fetchSubjectPdfPreviewBlob(subjectId: string): Promise<Blob> {
+  const response = await api.get(`/records/preview/${subjectId}/pdf`, {
+    responseType: 'blob',
+  });
+  return response.data;
+}

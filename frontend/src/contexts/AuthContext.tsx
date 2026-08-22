@@ -7,13 +7,14 @@ import {
   type ReactNode,
 } from 'react';
 import { signInWithPopup, signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
-import { auth, googleProvider } from '@/config/firebase';
+import { auth, googleProvider, isFirebaseConfigured } from '@/config/firebase';
 import { loginWithGoogle, getMe } from '@/services/authService';
 import type { User } from '@/types';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isFirebaseConfigured: boolean;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadUser]);
 
   useEffect(() => {
+    if (!auth) return;
     const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
       if (!firebaseUser && !localStorage.getItem('token')) {
         setUser(null);
@@ -55,6 +57,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signInWithGoogle = async () => {
+    if (!auth || !googleProvider) {
+      throw new Error(
+        'Firebase credentials are not configured. Please add VITE_FIREBASE_API_KEY and other Firebase variables in frontend/.env.'
+      );
+    }
     const result = await signInWithPopup(auth, googleProvider);
     const idToken = await result.user.getIdToken();
     const { token, user: apiUser } = await loginWithGoogle(idToken);
@@ -64,14 +71,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await firebaseSignOut(auth);
+    if (auth) {
+      try {
+        await firebaseSignOut(auth);
+      } catch {}
+    }
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signInWithGoogle, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, isFirebaseConfigured, signInWithGoogle, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
