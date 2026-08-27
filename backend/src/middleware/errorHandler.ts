@@ -8,9 +8,14 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
+  if (res.headersSent) {
+    return;
+  }
+
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
       success: false,
+      error: err.message,
       message: err.message,
     });
     return;
@@ -19,6 +24,7 @@ export function errorHandler(
   if (err.name === 'ValidationError') {
     res.status(400).json({
       success: false,
+      error: err.message,
       message: err.message,
     });
     return;
@@ -27,14 +33,17 @@ export function errorHandler(
   if (err.name === 'CastError') {
     res.status(400).json({
       success: false,
+      error: 'Invalid ID format',
       message: 'Invalid ID format',
     });
     return;
   }
 
   console.error('Unhandled error:', err);
+  const errorMessage = env.isProduction ? 'Internal server error' : err.message;
   res.status(500).json({
     success: false,
-    message: env.isProduction ? 'Internal server error' : err.message,
+    error: errorMessage,
+    message: errorMessage,
   });
 }

@@ -19,12 +19,35 @@ app.set('trust proxy', 1);
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-app.use(
-  cors({
-    origin: env.clientUrl,
-    credentials: true,
-  })
+const allowedOrigins = Array.from(
+  new Set([
+    'https://recordgenerator.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:5000',
+    ...(env.clientUrl ? [env.clientUrl] : []),
+  ])
 );
+
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (
+      allowedOrigins.includes(origin) ||
+      allowedOrigins.includes(origin.replace(/\/$/, '')) ||
+      /^https:\/\/recordgenerator.*\.vercel\.app$/.test(origin)
+    ) {
+      return callback(null, true);
+    }
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 app.use(
   rateLimit({
