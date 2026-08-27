@@ -84,7 +84,7 @@ export function padExpNo(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-export function formatTableDate(date: Date): string {
+export function formatTableDate(date: Date | string): string {
   const d = new Date(date);
   const day = String(d.getDate()).padStart(2, '0');
   const month = String(d.getMonth() + 1).padStart(2, '0');

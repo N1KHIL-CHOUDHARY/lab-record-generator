@@ -18,6 +18,7 @@ export interface PreviewExperiment {
   experimentDate: string;
   githubLink: string;
   qrImage?: string;
+  qrShortId?: string;
 }
 
 export interface DocumentPreviewData {
@@ -121,36 +122,50 @@ export function DocumentPreview({ data, className, embedded }: DocumentPreviewPr
               <tbody>
                 {data.experiments.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="cell-empty">
-                      No experiments in this preview.
+                    <td
+                      colSpan={6}
+                      className="!text-center !text-muted-foreground"
+                      style={{ fontSize: '11pt', padding: '0.4in' }}
+                    >
+                      Add experiments to see them in the table
                     </td>
                   </tr>
                 ) : (
-                  data.experiments.map((exp) => (
-                    <tr key={`${exp.experimentNo}-${exp.qrImage ?? exp.githubLink}`}>
-                      <td className="cell-exp">{padExpNo(exp.experimentNo)}</td>
-                      <td className="cell-date">{formatTableDate(exp.experimentDate)}</td>
-                      <td className="cell-name">
-                        <div className="exp-title">{exp.experimentName}</div>
-                        {exp.githubLink ? (
-                          <a href={exp.githubLink} target="_blank" rel="noreferrer">
-                            {exp.githubLink}
-                          </a>
-                        ) : (
-                          <span className="link-placeholder">GitHub URL</span>
-                        )}
-                      </td>
-                      <td className="cell-qr">
-                        {exp.qrImage ? (
-                          <img src={`${API_URL}${exp.qrImage}`} alt="QR" />
-                        ) : (
-                          <span className="qr-placeholder">QR</span>
-                        )}
-                      </td>
-                      <td className="cell-mark" />
-                      <td className="cell-sig" />
-                    </tr>
-                  ))
+                  data.experiments.map((exp) => {
+                    const qrImg =
+                      exp.qrImage || (exp.qrShortId ? `/uploads/qr/${exp.qrShortId}.png` : '');
+                    const qrSrc = qrImg
+                      ? qrImg.startsWith('http') || qrImg.startsWith('data:')
+                        ? qrImg
+                        : `${API_URL}${qrImg}`
+                      : '';
+
+                    return (
+                      <tr key={exp.experimentNo}>
+                        <td className="cell-exp">{padExpNo(exp.experimentNo)}</td>
+                        <td className="cell-date">{formatTableDate(exp.experimentDate)}</td>
+                        <td className="cell-name">
+                          <div className="exp-title">{exp.experimentName}</div>
+                          {exp.githubLink ? (
+                            <a href={exp.githubLink} target="_blank" rel="noreferrer">
+                              {exp.githubLink}
+                            </a>
+                          ) : (
+                            <span style={{ fontSize: '11pt', color: '#888' }}>Target URL</span>
+                          )}
+                        </td>
+                        <td className="cell-qr">
+                          {qrSrc ? (
+                            <img src={qrSrc} alt="QR" crossOrigin="anonymous" />
+                          ) : (
+                            <span style={{ fontSize: '9pt', color: '#aaa' }}>QR</span>
+                          )}
+                        </td>
+                        <td className="cell-mark" />
+                        <td className="cell-sig" />
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

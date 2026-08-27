@@ -16,9 +16,10 @@ import {
 export interface LabRecordExperiment {
   experimentNo: number;
   experimentName: string;
-  experimentDate: Date;
+  experimentDate: Date | string;
   githubLink: string;
-  qrImage: string;
+  qrImage?: string;
+  qrShortId?: string;
 }
 
 export interface LabRecordData {
@@ -185,9 +186,12 @@ export function buildLabRecordHtml(data: LabRecordData, options?: { embedStyles?
 
   const rows = data.experiments
     .map((exp) => {
-      const qrSrc = exp.qrImage.startsWith('http')
-        ? exp.qrImage
-        : `${env.appUrl}${exp.qrImage}`;
+      const qrImg = exp.qrImage || (exp.qrShortId ? `/uploads/qr/${exp.qrShortId}.png` : '');
+      const qrSrc = qrImg
+        ? qrImg.startsWith('http') || qrImg.startsWith('data:')
+          ? qrImg
+          : `${env.appUrl}${qrImg}`
+        : '';
       return `
       <tr>
         <td class="cell-exp">${padExpNo(exp.experimentNo)}</td>
@@ -196,7 +200,7 @@ export function buildLabRecordHtml(data: LabRecordData, options?: { embedStyles?
           <div class="exp-title">${escapeHtml(exp.experimentName)}</div>
           <a href="${escapeHtml(exp.githubLink)}">${escapeHtml(exp.githubLink)}</a>
         </td>
-        <td class="cell-qr"><img src="${escapeHtml(qrSrc)}" alt="QR" /></td>
+        <td class="cell-qr">${qrSrc ? `<img src="${escapeHtml(qrSrc)}" alt="QR" />` : ''}</td>
         <td class="cell-mark"></td>
         <td class="cell-sig"></td>
       </tr>`;

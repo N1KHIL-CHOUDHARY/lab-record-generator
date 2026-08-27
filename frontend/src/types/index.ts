@@ -53,7 +53,8 @@ export interface DashboardStats {
   lastRecord: RecordItem | null;
   qrAnalytics: {
     shortId: string;
-    originalUrl: string;
+    originalUrl?: string;
+    targetUrl?: string;
     totalScans: number;
     lastScannedAt?: string;
   }[];
@@ -72,4 +73,8 @@ export interface ExperimentRowState {
   experimentName: string;
   experimentDate: string;
   githubLink: string;
+  qrShortId?: string;
+  qrImage?: string;
+  isUpdatingQr?: boolean;
+  qrUpdateSuccess?: boolean;
 }

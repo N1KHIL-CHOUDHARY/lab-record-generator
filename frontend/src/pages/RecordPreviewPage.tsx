@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, FileDown, FileText, Loader2 } from 'lucide-react';
+import { ArrowLeft, FileDown, FileText, Loader2, Download } from 'lucide-react';
 import { getSubject } from '@/services/subjectService';
-import { generateRecord } from '@/services/recordService';
+import { generateRecord, fetchSubjectPdfPreviewBlob, fetchRecordPdfBlob } from '@/services/recordService';
 import { DocumentPreview, type DocumentPreviewData } from '@/components/document/DocumentPreview';
 import { Button } from '@/components/ui/button';
 import type { RecordItem } from '@/types';
@@ -15,6 +15,7 @@ export function RecordPreviewPage() {
   const [exportResult, setExportResult] = useState<RecordItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -33,12 +34,47 @@ export function RecordPreviewPage() {
             experimentDate: e.experimentDate,
             githubLink: e.githubLink,
             qrImage: e.qrImage,
+            qrShortId: e.qrShortId,
           })),
         });
       })
       .catch(() => setError('Failed to load preview'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  const handleDownloadDirectPdf = async () => {
+    if (!id) return;
+    setDownloadingPdf(true);
+    setError('');
+    try {
+      let blob: Blob;
+      if (exportResult?._id) {
+        blob = await fetchRecordPdfBlob(exportResult._id);
+      } else {
+        blob = await fetchSubjectPdfPreviewBlob(id);
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const fileName = previewData
+        ? `lab-record-${previewData.subjectCode.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`
+        : 'lab-record.pdf';
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { message?: string } } }).response?.data?.message
+          : 'Failed to download PDF stream';
+      setError(msg || 'Failed to download PDF stream');
+    } finally {
+      setDownloadingPdf(false);
+    }
+  };
 
   const handleExport = async () => {
     if (!id) return;
@@ -99,16 +135,23 @@ export function RecordPreviewPage() {
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Button
+              variant="default"
+              size="sm"
+              className="gap-2"
+              onClick={handleDownloadDirectPdf}
+              disabled={downloadingPdf}
+            >
+              {downloadingPdf ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              Download PDF
+            </Button>
+
             {(exportResult?.pdfUrl || exportResult?.docxUrl) && (
               <>
-                {exportResult.pdfUrl && (
-                  <a href={exportResult.pdfUrl} target="_blank" rel="noreferrer">
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <FileDown className="h-4 w-4" />
-                      PDF
-                    </Button>
-                  </a>
-                )}
                 {exportResult.docxUrl && (
                   <a href={exportResult.docxUrl} target="_blank" rel="noreferrer">
                     <Button variant="outline" size="sm" className="gap-2">
@@ -119,14 +162,17 @@ export function RecordPreviewPage() {
                 )}
               </>
             )}
-            <Button size="sm" onClick={handleExport} disabled={exporting}>
-              {exporting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <FileDown className="mr-2 h-4 w-4" />
-              )}
-              Generate PDF
-            </Button>
+
+            {!exportResult && (
+              <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+                {exporting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <FileDown className="mr-2 h-4 w-4" />
+                )}
+                Save to History
+              </Button>
+            )}
           </div>
         </div>
         {error && (
