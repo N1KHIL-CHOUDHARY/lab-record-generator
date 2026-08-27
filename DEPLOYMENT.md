@@ -24,7 +24,7 @@
 
 1. New **Web Service** → connect GitHub repo
 2. Root directory: `backend`
-3. Build command: `npm install && npm run build`
+3. Build command: `npm install --include=dev && npm run build` (or `npm install && npm run build`)
 4. Start command: `npm start`
 5. Add environment variables from `backend/.env.example`
 
