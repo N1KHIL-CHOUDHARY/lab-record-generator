@@ -152,7 +152,7 @@ export function DocumentPreview({ data, className }: DocumentPreviewProps) {
                         </td>
                         <td className="cell-qr">
                           {qrSrc ? (
-                            <img src={qrSrc} alt="QR" />
+                            <img src={qrSrc} alt="QR" crossOrigin="anonymous" />
                           ) : (
                             <span style={{ fontSize: '9pt', color: '#aaa' }}>QR</span>
                           )}
