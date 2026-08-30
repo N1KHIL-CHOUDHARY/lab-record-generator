@@ -6,10 +6,11 @@ import { prisma } from '../src/config/prisma.js';
 /**
  * Concurrency Test Runner:
  * Verifies that concurrent short code generations produce 100% unique,
- * non-overlapping, monotonically advancing Base62 short codes.
+ * non-overlapping, monotonically advancing Base62 short codes using
+ * the native cached PostgreSQL sequence architecture.
  */
 async function testConcurrentGenerations() {
-  console.log('--- Testing Concurrent Short-Code Generation ---');
+  console.log('--- Testing Concurrent Short-Code Generation (PostgreSQL Sequence) ---');
 
   const TOTAL_CONCURRENT_REQUESTS = 50;
   console.log(`Firing ${TOTAL_CONCURRENT_REQUESTS} simultaneous short-code generation requests...`);
@@ -17,7 +18,7 @@ async function testConcurrentGenerations() {
   let codes: string[] = [];
 
   try {
-    // Attempt with live database
+    // Attempt with live database sequence
     const promises: Promise<string>[] = [];
     for (let i = 0; i < TOTAL_CONCURRENT_REQUESTS; i++) {
       promises.push(defaultShortCodeGenerator.generate());
@@ -25,31 +26,22 @@ async function testConcurrentGenerations() {
 
     codes = await Promise.all(promises);
   } catch (dbError) {
-    console.log('Database not directly connected or table pending migration. Running atomic simulation test...');
+    console.log('Database not directly connected or sequence pending migration. Running atomic sequence simulation test...');
     
-    // In-memory mutex counter simulator representing row-locking behavior
-    let simulatedCounter = 100000n;
-    let lock: Promise<void> = Promise.resolve();
+    // In-memory atomic sequence simulator representing PostgreSQL CACHE 50 sequence behavior
+    let simulatedSequenceVal = 100000n;
 
-    class SimulatedAtomicGenerator implements IShortCodeGenerator {
+    class SimulatedSequenceGenerator implements IShortCodeGenerator {
       async generate(): Promise<string> {
-        let release: () => void = () => {};
-        const acquire = new Promise<void>((res) => { release = res; });
-        const prevLock = lock;
-        lock = acquire;
-
-        await prevLock;
-        // Simulate DB lock & work
-        await new Promise((r) => setTimeout(r, Math.random() * 5));
-        const val = simulatedCounter;
-        simulatedCounter += 1n;
-        release();
-
+        // Atomic fetch & increment simulating PostgreSQL nextval()
+        const val = simulatedSequenceVal++;
+        // Non-blocking asynchronous delay (simulate network query trip)
+        await new Promise((r) => setTimeout(r, Math.random() * 2));
         return encodeBase62(val);
       }
     }
 
-    const simGenerator = new SimulatedAtomicGenerator();
+    const simGenerator = new SimulatedSequenceGenerator();
     const simPromises: Promise<string>[] = [];
     for (let i = 0; i < TOTAL_CONCURRENT_REQUESTS; i++) {
       simPromises.push(simGenerator.generate());

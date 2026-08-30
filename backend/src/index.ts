@@ -5,12 +5,13 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import QRCode from 'qrcode';
 import { env, validateProductionEnv } from './config/env.js';
-import { connectPrisma } from './config/prisma.js';
+import { connectPrisma, prisma } from './config/prisma.js';
 import { initFirebase } from './config/firebase.js';
 import apiRoutes from './routes/index.js';
 import redirectRoutes from './routes/redirectRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { getStorageService } from './services/storage/index.js';
+import { startScanFlushInterval, stopScanFlushInterval } from './services/qrService.js';
 
 validateProductionEnv();
 
@@ -140,9 +141,25 @@ async function start() {
     initFirebase();
     await connectPrisma();
 
-    app.listen(env.port, () => {
+    // Start background flush interval for buffered QR scan metrics
+    startScanFlushInterval(30000);
+
+    const server = app.listen(env.port, () => {
       console.log(`Server running on port ${env.port} [${env.nodeEnv}] (PostgreSQL + Prisma)`);
     });
+
+    // Graceful shutdown handler
+    const gracefulShutdown = async (signal: string) => {
+      console.log(`\nReceived ${signal}. Shutting down gracefully...`);
+      await stopScanFlushInterval();
+      server.close(async () => {
+        await prisma.$disconnect().catch(() => {});
+        process.exit(0);
+      });
+    };
+
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
   } catch (err) {
     console.error('Failed to start server:', err);
     process.exit(1);

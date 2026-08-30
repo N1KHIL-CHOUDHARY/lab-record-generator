@@ -4,11 +4,11 @@ import { isValidGitHubUrl, normalizeGitHubUrl } from '../src/utils/githubValidat
 function runUrlValidatorTests() {
   console.log('--- Testing URL Validation & Security ---');
 
-  // Valid URLs
+  // Valid Public URLs
   const validUrls = [
     'https://github.com/facebook/react',
-    'http://localhost:3000/demo',
     'https://mydomain.com/path?query=1#hash',
+    'http://93.184.216.34/example',
   ];
 
   for (const url of validUrls) {
@@ -18,13 +18,14 @@ function runUrlValidatorTests() {
   }
   console.log('✓ Valid HTTP/HTTPS URLs accepted');
 
-  // Malicious / Dangerous URLs
+  // Malicious / Dangerous URLs & Localhost
   const dangerousUrls = [
     'javascript:alert(1)',
     'javascript:document.cookie',
     'data:text/html,<script>alert(1)</script>',
     'file:///etc/passwd',
     'ftp://ftp.example.com',
+    'http://localhost:3000/demo',
     '',
     'not a url',
   ];
@@ -34,7 +35,7 @@ function runUrlValidatorTests() {
       throw new Error(`Security vulnerability: Dangerous URL accepted: ${badUrl}`);
     }
   }
-  console.log('✓ Dangerous URL schemes (javascript:, data:, file:) successfully rejected');
+  console.log('✓ Dangerous URL schemes & loopback hosts successfully rejected');
 
   // GitHub validation
   if (!isValidGitHubUrl('https://github.com/facebook/react')) {

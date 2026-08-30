@@ -37,6 +37,9 @@ export const redirectShortLink = asyncHandler(async (req: Request, res: Response
 
   try {
     const destinationUrl = await handleRedirect(shortId);
+
+    // Cache-Control headers for CDN and downstream HTTP client caching
+    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=300, stale-while-revalidate=600');
     return res.redirect(302, destinationUrl);
   } catch (err) {
     if (err instanceof AppError && (err.statusCode === 404 || err.statusCode === 410)) {

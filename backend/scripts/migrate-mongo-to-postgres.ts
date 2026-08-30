@@ -213,8 +213,8 @@ async function migrate() {
     console.log(`Migrated Record: ${r.subjectCode} (${r.experiments?.length || 0} exps)`);
   }
 
-  // 6. Initialize ShortCodeCounter
-  console.log('\n--- Initializing ShortCodeCounter ---');
+  // 6. Initialize ShortCodeCounter and PostgreSQL Sequence
+  console.log('\n--- Initializing ShortCodeCounter & short_code_seq ---');
   const nextCounterVal = maxCounter + 1n;
   await prisma.shortCodeCounter.upsert({
     where: { id: 'singleton' },
@@ -227,6 +227,18 @@ async function migrate() {
     },
   });
   console.log(`Initialized ShortCodeCounter to ${nextCounterVal.toString()}`);
+
+  // Initialize or synchronize native PostgreSQL sequence
+  await prisma.$executeRaw`
+    CREATE SEQUENCE IF NOT EXISTS short_code_seq
+      START WITH 100000
+      INCREMENT BY 1
+      CACHE 50;
+  `;
+  await prisma.$executeRaw`
+    SELECT setval('short_code_seq', ${nextCounterVal}, false);
+  `;
+  console.log(`Synchronized short_code_seq to start next at ${nextCounterVal.toString()}`);
 
   console.log('\n=== MIGRATION COMPLETE ===\n');
 }
