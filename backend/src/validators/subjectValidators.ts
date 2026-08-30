@@ -9,7 +9,7 @@ export const createSubjectValidation = [
 ];
 
 export const updateSubjectValidation = [
-  param('id').isMongoId().withMessage('Invalid subject ID'),
+  param('id').trim().notEmpty().withMessage('Subject ID is required'),
   body('subjectName').optional().trim().notEmpty(),
   body('subjectCode').optional().trim().notEmpty(),
   body('subjectCodeAlt').optional().trim(),
@@ -18,5 +18,5 @@ export const updateSubjectValidation = [
 ];
 
 export const subjectIdValidation = [
-  param('id').isMongoId().withMessage('Invalid subject ID'),
+  param('id').trim().notEmpty().withMessage('Subject ID is required'),
 ];

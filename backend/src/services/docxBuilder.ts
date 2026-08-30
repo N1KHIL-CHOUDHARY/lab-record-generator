@@ -198,7 +198,8 @@ function experimentRow(
       borders: cellBorders(),
       children: [
         new Paragraph({
-          children: [timesRun(formatTableDate(exp.experimentDate), { sizePt: TABLE.bodyFontPt })],
+          alignment: AlignmentType.CENTER,
+          children: [timesRun(formatTableDate(exp.experimentDate), { sizePt: TABLE.dateFontPt })],
         }),
       ],
     }),

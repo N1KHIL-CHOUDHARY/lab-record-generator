@@ -134,7 +134,12 @@ export function getLabRecordStyles(): string {
       text-align: center;
       vertical-align: middle;
     }
-    .cell-date { vertical-align: top; }
+    .cell-date {
+      vertical-align: top;
+      font-size: ${TABLE.dateFontPt}pt !important;
+      white-space: nowrap !important;
+      text-align: center;
+    }
     .cell-name .exp-title {
       margin-bottom: 0.08in;
       font-size: ${TABLE.bodyFontPt}pt;

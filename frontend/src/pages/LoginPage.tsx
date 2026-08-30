@@ -37,12 +37,10 @@ export function LoginPage() {
         className="w-full max-w-sm"
       >
         <div className="mb-8 text-center">
-          <Link to="/" className="inline-flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
-              <FlaskConical className="h-[18px] w-[18px]" />
-            </div>
+          <Link to="/" className="inline-flex items-center gap-2">
+            <FlaskConical className="h-5 w-5 text-foreground" />
             <span className="text-base font-semibold tracking-tight text-foreground">
-              Smart Lab Record
+              Labora
             </span>
           </Link>
         </div>

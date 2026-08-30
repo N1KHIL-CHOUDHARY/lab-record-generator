@@ -12,9 +12,7 @@ export function NotFoundPage() {
         transition={{ duration: 0.35 }}
         className="flex flex-col items-center"
       >
-        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary text-secondary-foreground">
-          <FlaskConical className="h-6 w-6" />
-        </div>
+        <FlaskConical className="mb-4 h-10 w-10 text-foreground" />
 
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
           Error 404

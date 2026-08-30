@@ -1,13 +1,13 @@
 import { body, param } from 'express-validator';
 
 export const generateRecordValidation = [
-  body('subjectId').isMongoId().withMessage('Valid subject ID is required'),
+  body('subjectId').trim().notEmpty().withMessage('Valid subject ID is required'),
 ];
 
 export const previewSubjectValidation = [
-  param('subjectId').isMongoId().withMessage('Valid subject ID is required'),
+  param('subjectId').trim().notEmpty().withMessage('Valid subject ID is required'),
 ];
 
 export const recordIdValidation = [
-  param('id').isMongoId().withMessage('Invalid record ID'),
+  param('id').trim().notEmpty().withMessage('Valid record ID is required'),
 ];

@@ -116,6 +116,13 @@
   vertical-align: middle;
 }
 
+.lab-doc .cell-date {
+  font-size: 11pt !important;
+  white-space: nowrap !important;
+  vertical-align: top;
+  text-align: center;
+}
+
 .lab-doc .cell-name .exp-title {
   margin-bottom: 0.08in;
 }

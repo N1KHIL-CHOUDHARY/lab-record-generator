@@ -1,42 +1,32 @@
 import QRCode from 'qrcode';
-import path from 'path';
-import fs from 'fs/promises';
 import { env } from '../config/env.js';
-import { QR, type IQR } from '../models/QR.js';
-import { generateShortId } from '../utils/shortId.js';
+import { prisma } from '../config/prisma.js';
+import { defaultShortCodeGenerator } from './shortCode/index.js';
+import { getStorageService } from './storage/index.js';
 import { AppError } from '../utils/AppError.js';
-import { Types } from 'mongoose';
-
-const UPLOADS_DIR = path.join(process.cwd(), 'uploads', 'qr');
-
-async function ensureUploadDir(): Promise<void> {
-  await fs.mkdir(UPLOADS_DIR, { recursive: true });
-}
 
 export interface QRMappingResult {
+  id: string;
+  _id: string; // for frontend backward compatibility
   shortId: string;
+  shortCode: string;
   targetUrl: string;
+  destinationUrl: string;
   qrImage: string;
   qrDataUrl: string;
   redirectUrl: string;
 }
 
 export async function createQRMapping(
-  targetUrl: string,
-  createdBy: Types.ObjectId | string,
-  experimentId?: Types.ObjectId | string
+  destinationUrl: string,
+  userId: string,
+  _experimentId?: string
 ): Promise<QRMappingResult> {
-  await ensureUploadDir();
+  const storageService = getStorageService();
 
-  let shortId = generateShortId();
-  let exists = await QR.findOne({ shortId });
-
-  while (exists) {
-    shortId = generateShortId();
-    exists = await QR.findOne({ shortId });
-  }
-
-  const redirectUrl = `${env.appUrl}/r/${shortId}`;
+  // Generate atomic collision-free short code
+  const shortCode = await defaultShortCodeGenerator.generate();
+  const redirectUrl = `${env.appUrl}/r/${shortCode}`;
 
   // Generate QR as Data URL for direct embed in React PDF / Frontend
   const qrDataUrl = await QRCode.toDataURL(redirectUrl, {
@@ -46,11 +36,8 @@ export async function createQRMapping(
     color: { dark: '#000000', light: '#FFFFFF' },
   });
 
-  // Save to file as static asset fallback
-  const qrImageFileName = `${shortId}.png`;
-  const qrImagePath = path.join(UPLOADS_DIR, qrImageFileName);
-
-  await QRCode.toFile(qrImagePath, redirectUrl, {
+  // Generate PNG buffer
+  const qrBuffer = await QRCode.toBuffer(redirectUrl, {
     type: 'png',
     width: 512,
     margin: 2,
@@ -58,78 +45,107 @@ export async function createQRMapping(
     color: { dark: '#000000', light: '#FFFFFF' },
   });
 
-  const userObjectId = typeof createdBy === 'string' ? new Types.ObjectId(createdBy) : createdBy;
-  const expObjectId = experimentId
-    ? typeof experimentId === 'string'
-      ? new Types.ObjectId(experimentId)
-      : experimentId
-    : undefined;
+  // Upload to storage (S3 / R2 / Local)
+  const qrImageFileName = `qr/${shortCode}.png`;
+  const qrImageUrl = await storageService.upload(qrImageFileName, qrBuffer, 'image/png');
 
-  await QR.create({
-    shortId,
-    targetUrl,
-    createdBy: userObjectId,
-    experimentId: expObjectId,
-    totalScans: 0,
+  const qr: any = await prisma.qR.create({
+    data: {
+      shortCode,
+      destinationUrl,
+      userId,
+      totalScans: 0,
+    },
   });
 
-  const qrImage = `/uploads/qr/${qrImageFileName}`;
-
-  return { shortId, targetUrl, qrImage, qrDataUrl, redirectUrl };
+  return {
+    id: qr.id,
+    _id: qr.id,
+    shortId: qr.shortCode,
+    shortCode: qr.shortCode,
+    targetUrl: qr.destinationUrl,
+    destinationUrl: qr.destinationUrl,
+    qrImage: qrImageUrl,
+    qrDataUrl,
+    redirectUrl,
+  };
 }
 
 export async function updateQRUrl(
-  shortId: string,
-  newTargetUrl: string,
+  shortCode: string,
+  newDestinationUrl: string,
   userId: string
-): Promise<IQR> {
-  const qr = await QR.findOne({ shortId });
+) {
+  const qr: any = await prisma.qR.findUnique({
+    where: { shortCode },
+  });
 
   if (!qr) {
     throw new AppError('QR code not found', 404);
   }
 
-  const ownerId = qr.createdBy ? qr.createdBy.toString() : qr.userId?.toString();
-  if (ownerId !== userId) {
+  if (qr.userId !== userId) {
     throw new AppError('Not authorized to update this QR', 403);
   }
 
-  qr.targetUrl = newTargetUrl;
-  await qr.save();
+  const updatedQr: any = await prisma.qR.update({
+    where: { shortCode },
+    data: { destinationUrl: newDestinationUrl },
+  });
 
-  return qr;
+  return {
+    ...updatedQr,
+    _id: updatedQr.id,
+    targetUrl: updatedQr.destinationUrl,
+    shortId: updatedQr.shortCode,
+  };
 }
 
-export async function handleRedirect(shortId: string): Promise<string> {
-  const qr = await QR.findOne({ shortId });
+export async function handleRedirect(shortCode: string): Promise<string> {
+  const qr: any = await prisma.qR.findUnique({
+    where: { shortCode },
+  });
 
   if (!qr) {
     throw new AppError('Link not found', 404);
   }
 
-  qr.totalScans = (qr.totalScans || 0) + 1;
-  qr.lastScannedAt = new Date();
-  await qr.save();
+  if (qr.status !== 'ACTIVE') {
+    throw new AppError('This QR code link has been disabled or revoked', 410);
+  }
 
-  return qr.targetUrl || (qr as any).originalUrl;
+  // Non-blocking scan counter update
+  prisma.qR
+    .update({
+      where: { shortCode },
+      data: {
+        totalScans: { increment: 1 },
+        lastScannedAt: new Date(),
+      },
+    })
+    .catch((err: unknown) => console.error('Failed to increment QR scans:', err));
+
+  return qr.destinationUrl;
 }
 
 export async function getQRAnalytics(userId: string) {
-  const userObjectId = new Types.ObjectId(userId);
-  const qrs = await QR.find({
-    $or: [{ createdBy: userObjectId }, { userId: userObjectId }],
-  })
-    .sort({ totalScans: -1 })
-    .limit(20);
+  const qrs: any[] = await prisma.qR.findMany({
+    where: { userId },
+    orderBy: { totalScans: 'desc' },
+    take: 20,
+  });
 
-  const totalScans = qrs.reduce((sum, q) => sum + (q.totalScans || 0), 0);
+  const totalScans = qrs.reduce((sum: number, q: any) => sum + (Number(q.totalScans) || 0), 0);
 
   return {
     totalScans,
-    topLinks: qrs.map((q) => ({
-      shortId: q.shortId,
-      targetUrl: q.targetUrl || q.originalUrl,
-      originalUrl: q.targetUrl || q.originalUrl,
+    topLinks: qrs.map((q: any) => ({
+      id: q.id,
+      _id: q.id,
+      shortId: q.shortCode,
+      shortCode: q.shortCode,
+      targetUrl: q.destinationUrl,
+      originalUrl: q.destinationUrl,
       totalScans: q.totalScans || 0,
       lastScannedAt: q.lastScannedAt,
     })),

@@ -3,9 +3,14 @@ import fs from 'fs/promises';
 import React from 'react';
 import { renderToBuffer } from '@react-pdf/renderer';
 import QRCode from 'qrcode';
-import { LabRecordDocument, type LabRecordDocProps, type LabRecordDocExperiment } from '../templates/LabRecordDocument.js';
+import {
+  LabRecordDocument,
+  type LabRecordDocProps,
+  type LabRecordDocExperiment,
+} from '../templates/LabRecordDocument.js';
 import { buildLabRecordDocx } from './docxBuilder.js';
 import { env } from '../config/env.js';
+import { getStorageService } from './storage/index.js';
 
 export interface ExportExperiment {
   experimentNo: number;
@@ -25,12 +30,6 @@ export interface ExportData {
   experiments: ExportExperiment[];
   bannerDataUrl?: string;
   bannerUrl?: string;
-}
-
-const EXPORTS_DIR = path.join(process.cwd(), 'uploads', 'exports');
-
-async function ensureExportDir(): Promise<void> {
-  await fs.mkdir(EXPORTS_DIR, { recursive: true });
 }
 
 async function prepareDocProps(data: ExportData): Promise<LabRecordDocProps> {
@@ -55,13 +54,22 @@ async function prepareDocProps(data: ExportData): Promise<LabRecordDocProps> {
         });
       } else if (exp.qrImage && exp.qrImage.startsWith('data:image')) {
         qrDataUrl = exp.qrImage;
+      } else if (exp.qrImage && exp.qrImage.startsWith('http')) {
+        // If it's a remote URL, render QR dynamically from short code / link
+        const target = exp.qrShortId ? `${env.appUrl}/r/${exp.qrShortId}` : exp.githubLink;
+        if (target) {
+          qrDataUrl = await QRCode.toDataURL(target, {
+            width: 256,
+            margin: 1,
+            errorCorrectionLevel: 'H',
+          });
+        }
       } else if (exp.qrImage) {
         const localPath = path.join(process.cwd(), exp.qrImage.replace(/^\//, ''));
         try {
           const fileBuf = await fs.readFile(localPath);
           qrDataUrl = `data:image/png;base64,${fileBuf.toString('base64')}`;
         } catch {
-          // If file not found locally, generate fallback QR from githubLink
           if (exp.githubLink) {
             qrDataUrl = await QRCode.toDataURL(exp.githubLink, {
               width: 256,
@@ -110,17 +118,19 @@ export async function generatePdfBuffer(data: ExportData): Promise<Buffer> {
 }
 
 export async function exportPdf(data: ExportData, fileName: string): Promise<string> {
-  await ensureExportDir();
+  const storageService = getStorageService();
   const buffer = await generatePdfBuffer(data);
-  const filePath = path.join(EXPORTS_DIR, `${fileName}.pdf`);
-  await fs.writeFile(filePath, buffer);
-  return `/uploads/exports/${fileName}.pdf`;
+  const key = `exports/${fileName}.pdf`;
+  return await storageService.upload(key, buffer, 'application/pdf');
 }
 
 export async function exportDocx(data: ExportData, fileName: string): Promise<string> {
-  await ensureExportDir();
+  const storageService = getStorageService();
   const buffer = await buildLabRecordDocx(data as any);
-  const filePath = path.join(EXPORTS_DIR, `${fileName}.docx`);
-  await fs.writeFile(filePath, buffer);
-  return `/uploads/exports/${fileName}.docx`;
+  const key = `exports/${fileName}.docx`;
+  return await storageService.upload(
+    key,
+    buffer,
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  );
 }

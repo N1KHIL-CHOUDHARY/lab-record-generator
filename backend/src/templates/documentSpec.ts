@@ -46,6 +46,7 @@ export const TABLE = {
   borderPt: 1,
   headerFontPt: 13,
   bodyFontPt: 13,
+  dateFontPt: 11,
   linkFontPt: 11,
 } as const;
 

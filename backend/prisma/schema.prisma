@@ -1,0 +1,134 @@
+// Prisma Schema for Smart Lab Record Generator
+// Target Database: Supabase PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum RecordStatus {
+  ACTIVE
+  DISABLED
+  ARCHIVED
+}
+
+enum QRStatus {
+  ACTIVE
+  DISABLED
+  REVOKED
+}
+
+model User {
+  id          String   @id @default(uuid())
+  firebaseUid String   @unique
+  name        String
+  email       String?  @unique
+  avatar      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subjects    Subject[]
+  experiments Experiment[]
+  records     Record[]
+  qrs         QR[]
+
+  @@map("users")
+}
+
+model Subject {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjectName    String
+  subjectCode    String
+  subjectCodeAlt String?
+  studentName    String   @default("")
+  registerNumber String   @default("")
+  semester       String?
+  facultyName    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  experiments    Experiment[]
+  records        Record[]
+
+  @@index([userId])
+  @@map("subjects")
+}
+
+model QR {
+  id             String    @id @default(uuid())
+  shortCode      String    @unique
+  destinationUrl String
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status         QRStatus  @default(ACTIVE)
+  totalScans     Int       @default(0)
+  lastScannedAt  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  experiment     Experiment?
+
+  @@index([shortCode])
+  @@index([userId])
+  @@map("qrs")
+}
+
+model Experiment {
+  id             String   @id @default(uuid())
+  subjectId      String
+  subject        Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  experimentNo   Int
+  experimentName String
+  experimentDate DateTime
+  githubLink     String
+  qrId           String?  @unique
+  qr             QR?      @relation(fields: [qrId], references: [id], onDelete: SetNull)
+  qrImage        String?
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([subjectId, experimentNo])
+  @@index([subjectId])
+  @@index([userId])
+  @@map("experiments")
+}
+
+model Record {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subjectId      String
+  subject        Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subjectName    String
+  subjectCode    String
+  subjectCodeAlt String?
+  studentName    String       @default("")
+  registerNumber String       @default("")
+  experiments    Json
+  pdfUrl         String?
+  docxUrl        String?
+  status         RecordStatus @default(ACTIVE)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("records")
+}
+
+model ShortCodeCounter {
+  id           String   @id @default("singleton")
+  currentValue BigInt   @default(100000)
+  updatedAt    DateTime @updatedAt
+
+  @@map("short_code_counters")
+}

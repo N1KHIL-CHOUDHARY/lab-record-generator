@@ -322,84 +322,91 @@ export function LabRecordWorkspacePage() {
                 key={row.localId}
                 className="space-y-3 rounded-xl border border-border bg-background/50 p-4 transition-all hover:border-[#6351ce]/40 dark:hover:border-[#9d8df2]/40"
               >
-                <div className="grid gap-3 sm:grid-cols-12 sm:items-end">
-                  <div className="space-y-1 sm:col-span-1">
-                    <Label className="text-[11px] font-medium text-muted-foreground">Exp #</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      className="h-9.5 rounded-lg border-border bg-card text-center font-mono text-xs"
-                      value={row.experimentNo}
-                      onChange={(e) =>
-                        updateRow(row.localId, { experimentNo: Number(e.target.value) || index + 1 })
-                      }
-                    />
-                  </div>
-
-                  <div className="space-y-1 sm:col-span-2">
-                    <Label className="text-[11px] font-medium text-muted-foreground">Date</Label>
-                    <Input
-                      type="date"
-                      className="h-9.5 rounded-lg border-border bg-card text-xs"
-                      value={row.experimentDate}
-                      onChange={(e) => updateRow(row.localId, { experimentDate: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-1 sm:col-span-4">
-                    <Label className="text-[11px] font-medium text-muted-foreground">
-                      Experiment Title
-                    </Label>
-                    <Input
-                      className="h-9.5 rounded-lg border-border bg-card text-xs"
-                      placeholder="e.g. Matrix Inversion in Python"
-                      value={row.experimentName}
-                      onChange={(e) => updateRow(row.localId, { experimentName: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="space-y-1 sm:col-span-4">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-[11px] font-medium text-muted-foreground">
-                        Target GitHub URL
-                      </Label>
-                      {row.qrShortId && (
-                        <span className="inline-flex items-center gap-1 font-mono text-[10px] text-secondary-foreground">
-                          <QrCode className="h-3 w-3" />
-                          /r/{row.qrShortId}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex gap-1.5">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+                  {/* Exp # & Date in a row on small/medium screens, or inline on large */}
+                  <div className="flex gap-3 shrink-0">
+                    <div className="w-16 shrink-0 space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground">Exp #</Label>
                       <Input
-                        className="h-9.5 rounded-lg border-border bg-card text-xs"
-                        placeholder="https://github.com/user/repo"
-                        value={row.githubLink}
-                        onChange={(e) => updateRow(row.localId, { githubLink: e.target.value })}
+                        type="number"
+                        min={1}
+                        className="h-9.5 w-full rounded-lg border-border bg-card text-center font-mono text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        value={row.experimentNo}
+                        onChange={(e) =>
+                          updateRow(row.localId, { experimentNo: Number(e.target.value) || index + 1 })
+                        }
                       />
-                      {row.qrShortId && (
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          className="h-9.5 shrink-0 rounded-lg px-2.5 text-xs"
-                          title="Update dynamic QR destination immediately in real-time"
-                          disabled={row.isUpdatingQr || !row.githubLink.trim()}
-                          onClick={() => handleInstantQrUpdate(row)}
-                        >
-                          {row.isUpdatingQr ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : row.qrUpdateSuccess ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                          ) : (
-                            <RefreshCw className="h-3.5 w-3.5" />
-                          )}
-                        </Button>
-                      )}
+                    </div>
+
+                    <div className="w-36 shrink-0 space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground">Date</Label>
+                      <Input
+                        type="date"
+                        className="h-9.5 w-full rounded-lg border-border bg-card text-xs"
+                        value={row.experimentDate}
+                        onChange={(e) => updateRow(row.localId, { experimentDate: e.target.value })}
+                      />
                     </div>
                   </div>
 
-                  <div className="flex justify-end sm:col-span-1">
+                  {/* Title & Target URL */}
+                  <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
+                    <div className="min-w-0 space-y-1">
+                      <Label className="text-[11px] font-medium text-muted-foreground">
+                        Experiment Title
+                      </Label>
+                      <Input
+                        className="h-9.5 w-full rounded-lg border-border bg-card text-xs"
+                        placeholder="e.g. Matrix Inversion in Python"
+                        value={row.experimentName}
+                        onChange={(e) => updateRow(row.localId, { experimentName: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[11px] font-medium text-muted-foreground">
+                          Target GitHub URL
+                        </Label>
+                        {row.qrShortId && (
+                          <span className="inline-flex items-center gap-1 font-mono text-[10px] text-secondary-foreground">
+                            <QrCode className="h-3 w-3" />
+                            /r/{row.qrShortId}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex gap-1.5">
+                        <Input
+                          className="h-9.5 min-w-0 flex-1 rounded-lg border-border bg-card text-xs"
+                          placeholder="https://github.com/user/repo"
+                          value={row.githubLink}
+                          onChange={(e) => updateRow(row.localId, { githubLink: e.target.value })}
+                        />
+                        {row.qrShortId && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="h-9.5 shrink-0 rounded-lg px-2.5 text-xs"
+                            title="Update dynamic QR destination immediately in real-time"
+                            disabled={row.isUpdatingQr || !row.githubLink.trim()}
+                            onClick={() => handleInstantQrUpdate(row)}
+                          >
+                            {row.isUpdatingQr ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : row.qrUpdateSuccess ? (
+                              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                            ) : (
+                              <RefreshCw className="h-3.5 w-3.5" />
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Delete button */}
+                  <div className="flex shrink-0 justify-end">
                     <Button
                       type="button"
                       variant="ghost"
@@ -407,6 +414,7 @@ export function LabRecordWorkspacePage() {
                       className="h-9.5 w-9.5 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                       onClick={() => removeRow(row.localId)}
                       disabled={rows.length <= 1}
+                      title="Remove experiment"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

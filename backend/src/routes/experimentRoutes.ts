@@ -23,7 +23,7 @@ router.post(
   createExperiment
 );
 router.put('/:id', validate(updateExperimentValidation), updateExperiment);
-router.delete('/:id', updateExperiment);
+router.delete('/:id', deleteExperiment);
 router.patch(
   '/:subjectId/reorder',
   validate(reorderExperimentsValidation),

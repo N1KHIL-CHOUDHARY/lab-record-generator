@@ -2,16 +2,15 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import mongoSanitize from 'express-mongo-sanitize';
 import path from 'path';
-import fs from 'fs';
 import QRCode from 'qrcode';
 import { env, validateProductionEnv } from './config/env.js';
-import { connectDatabase } from './config/database.js';
+import { connectPrisma } from './config/prisma.js';
 import { initFirebase } from './config/firebase.js';
 import apiRoutes from './routes/index.js';
 import redirectRoutes from './routes/redirectRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { getStorageService } from './services/storage/index.js';
 
 validateProductionEnv();
 
@@ -62,7 +61,6 @@ app.use(
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(mongoSanitize());
 
 // Dynamic QR code endpoint with on-the-fly regeneration for ephemeral hosts (Render/Vercel/Heroku)
 app.get('/uploads/qr/:filename', async (req, res) => {
@@ -73,18 +71,19 @@ app.get('/uploads/qr/:filename', async (req, res) => {
     return res.status(404).json({ success: false, error: 'Invalid QR identifier' });
   }
 
-  const qrDir = path.join(process.cwd(), 'uploads', 'qr');
-  const filePath = path.join(qrDir, `${shortId}.png`);
-
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
   res.setHeader('Content-Type', 'image/png');
 
   try {
-    const fileExists = await fs.promises.access(filePath).then(() => true).catch(() => false);
-    if (fileExists) {
-      return res.sendFile(filePath);
+    const storageService = getStorageService();
+    const key = `qr/${shortId}.png`;
+    const exists = await storageService.exists(key);
+
+    if (exists && 'baseDir' in storageService) {
+      const localPath = path.join(process.cwd(), 'uploads', 'qr', `${shortId}.png`);
+      return res.sendFile(localPath);
     }
 
     const redirectUrl = `${env.appUrl}/r/${shortId}`;
@@ -96,9 +95,9 @@ app.get('/uploads/qr/:filename', async (req, res) => {
       color: { dark: '#000000', light: '#FFFFFF' },
     });
 
-    fs.promises.mkdir(qrDir, { recursive: true })
-      .then(() => fs.promises.writeFile(filePath, qrBuffer))
-      .catch((err) => console.error('Failed to cache QR code to disk:', err));
+    storageService
+      .upload(key, qrBuffer, 'image/png')
+      .catch((err) => console.error('Failed to cache QR code in storage:', err));
 
     return res.end(qrBuffer);
   } catch (err) {
@@ -128,7 +127,7 @@ app.use(
 );
 
 app.get('/health', (_req, res) => {
-  res.json({ success: true, message: 'Smart Lab Record API is running' });
+  res.json({ success: true, message: 'Smart Lab Record API is running on PostgreSQL + Prisma' });
 });
 
 app.use('/r', redirectRoutes);
@@ -139,10 +138,10 @@ app.use(errorHandler);
 async function start() {
   try {
     initFirebase();
-    await connectDatabase();
+    await connectPrisma();
 
     app.listen(env.port, () => {
-      console.log(`Server running on port ${env.port} [${env.nodeEnv}]`);
+      console.log(`Server running on port ${env.port} [${env.nodeEnv}] (PostgreSQL + Prisma)`);
     });
   } catch (err) {
     console.error('Failed to start server:', err);
