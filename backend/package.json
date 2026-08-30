@@ -1,6 +1,7 @@
 {
   "name": "smart-lab-record-api",
   "version": "1.0.0",
+  "type": "module",
   "description": "Smart Lab Record Generator API",
   "main": "dist/index.js",
   "scripts": {
