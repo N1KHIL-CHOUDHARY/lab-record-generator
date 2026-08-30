@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { BookOpen, History, Settings, LogOut, FlaskConical, Menu } from 'lucide-react';
+import { BookOpen, History, Settings, LogOut, FlaskConical, Menu, X } from 'lucide-react';
 import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -22,41 +23,81 @@ export function AppLayout() {
   };
 
   const Sidebar = () => (
-    <div className="flex h-full flex-col">
-      <div className="border-b border-border px-6 py-6">
-        <Link to="/records/new" className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center text-foreground">
+    <div className="flex h-full flex-col bg-card">
+      <div className="flex items-center justify-between border-b border-border px-5 py-5">
+        <Link to="/records/new" className="flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <FlaskConical className="h-4 w-4" />
           </div>
-          <span className="text-sm font-semibold tracking-tight">Lab Record</span>
+          <span className="text-[15px] font-semibold tracking-tight text-foreground">
+            Smart Lab Record
+          </span>
         </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-lg text-muted-foreground hover:bg-muted lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
-      <nav className="flex-1 space-y-0.5 p-4">
+
+      <nav className="flex-1 space-y-1.5 p-3">
         {navItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
-            end={to === '/records/new'}
             onClick={() => setMobileOpen(false)}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors',
+                'group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-foreground text-background'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? 'bg-secondary text-secondary-foreground font-semibold'
+                  : 'text-muted-foreground hover:bg-accent hover:text-foreground'
               )
             }
           >
-            <Icon className="h-4 w-4" strokeWidth={1.75} />
-            {label}
+            {({ isActive }) => (
+              <>
+                <span
+                  className={cn(
+                    'flex h-7 w-7 items-center justify-center rounded-lg transition-colors',
+                    isActive
+                      ? 'bg-[#6351ce] text-white dark:bg-[#9d8df2] dark:text-[#0e0d13]'
+                      : 'text-muted-foreground group-hover:text-foreground'
+                  )}
+                >
+                  <Icon className="h-4 w-4" strokeWidth={1.85} />
+                </span>
+                {label}
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
+
       <div className="border-t border-border p-4">
-        <p className="mb-3 truncate px-3 text-xs text-muted-foreground">{user?.email}</p>
-        <Button variant="outline" className="w-full justify-start gap-2" onClick={handleLogout}>
+        <div className="mb-3 flex items-center gap-3 px-1">
+          {user?.avatar ? (
+            <img src={user.avatar} alt="" className="h-8 w-8 rounded-full ring-1 ring-border" />
+          ) : (
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-secondary-foreground">
+              {user?.name?.[0] || 'U'}
+            </div>
+          )}
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">{user?.name || 'User'}</p>
+            <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+          </div>
+        </div>
+        <Button
+          variant="outline"
+          className="w-full justify-start gap-2 rounded-xl text-muted-foreground hover:text-foreground"
+          onClick={handleLogout}
+        >
           <LogOut className="h-4 w-4" />
-          Logout
+          Log out
         </Button>
       </div>
     </div>
@@ -64,31 +105,55 @@ export function AppLayout() {
 
   return (
     <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-56 shrink-0 border-r border-border lg:block">
+      <aside className="hidden w-64 shrink-0 border-r border-border lg:block">
         <Sidebar />
       </aside>
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-foreground/20" onClick={() => setMobileOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-56 border-r border-border bg-background">
-            <Sidebar />
-          </aside>
-        </div>
-      )}
+      <AnimatePresence>
+        {mobileOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setMobileOpen(false)}
+            />
+            <motion.aside
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'tween', duration: 0.25, ease: 'easeOut' }}
+              className="absolute left-0 top-0 h-full w-72 shadow-2xl"
+            >
+              <Sidebar />
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center border-b border-border px-4 lg:px-6">
+        <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 lg:hidden">
+          <Link to="/records/new" className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <FlaskConical className="h-3.5 w-3.5" />
+            </div>
+            <span className="text-sm font-semibold tracking-tight text-foreground">
+              Smart Lab Record
+            </span>
+          </Link>
           <Button
             variant="ghost"
             size="icon"
-            className="lg:hidden"
+            className="rounded-lg text-muted-foreground hover:bg-muted"
             onClick={() => setMobileOpen(true)}
           >
             <Menu className="h-5 w-5" />
           </Button>
         </header>
-        <main className="flex-1 overflow-auto">
+
+        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

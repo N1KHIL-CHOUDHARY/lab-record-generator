@@ -1,12 +1,14 @@
 export interface User {
   id: string;
+  _id?: string;
   name: string;
-  email: string;
+  email: string | null;
   avatar?: string;
 }
 
 export interface Subject {
   _id: string;
+  id?: string;
   subjectName: string;
   subjectCode: string;
   subjectCodeAlt?: string;
@@ -20,6 +22,7 @@ export interface Subject {
 
 export interface Experiment {
   _id: string;
+  id?: string;
   subjectId: string;
   experimentNo: number;
   experimentName: string;
@@ -32,6 +35,7 @@ export interface Experiment {
 
 export interface RecordItem {
   _id: string;
+  id?: string;
   subjectId: string;
   subjectName: string;
   subjectCode: string;
@@ -69,6 +73,7 @@ export interface ApiResponse<T> {
 export interface ExperimentRowState {
   localId: string;
   _id?: string;
+  id?: string;
   experimentNo: number;
   experimentName: string;
   experimentDate: string;

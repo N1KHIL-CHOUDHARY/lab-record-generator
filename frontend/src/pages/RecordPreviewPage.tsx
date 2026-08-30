@@ -97,7 +97,7 @@ export function RecordPreviewPage() {
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-foreground border-t-transparent" />
+        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
       </div>
     );
   }
@@ -106,7 +106,7 @@ export function RecordPreviewPage() {
     return (
       <div className="mx-auto max-w-lg px-6 py-24 text-center">
         <p className="text-sm text-muted-foreground">{error || 'Preview unavailable'}</p>
-        <Button variant="outline" className="mt-6" onClick={() => navigate(`/records/${id}`)}>
+        <Button variant="outline" className="mt-6 rounded-lg" onClick={() => navigate(`/records/${id}`)}>
           Back to editor
         </Button>
       </div>
@@ -121,54 +121,59 @@ export function RecordPreviewPage() {
 
   return (
     <div className="flex min-h-full flex-col bg-background">
-      <header className="sticky top-0 z-10 border-b border-border bg-background">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-6 py-5">
-          <div className="flex items-center gap-4">
+      <header className="sticky top-0 z-10 border-b border-border bg-card/95 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
+          <div className="flex items-center gap-3">
             <Link to={`/records/${id}`}>
-              <Button variant="ghost" size="icon">
+              <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl text-muted-foreground hover:bg-muted hover:text-foreground">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-lg font-semibold tracking-tight">Document preview</h1>
-              <p className="text-sm text-muted-foreground">{title}</p>
+              <p className="text-[11px] font-medium text-muted-foreground">
+                Document Preview
+              </p>
+              <h1 className="text-sm font-semibold tracking-tight text-foreground sm:text-base">{title}</h1>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="default"
               size="sm"
-              className="gap-2"
+              className="h-9 gap-1.5 rounded-xl bg-primary px-3.5 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90"
               onClick={handleDownloadDirectPdf}
               disabled={downloadingPdf}
             >
               {downloadingPdf ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : (
-                <Download className="h-4 w-4" />
+                <Download className="h-3.5 w-3.5" />
               )}
               Download PDF
             </Button>
 
-            {(exportResult?.pdfUrl || exportResult?.docxUrl) && (
-              <>
-                {exportResult.docxUrl && (
-                  <a href={exportResult.docxUrl} target="_blank" rel="noreferrer">
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <FileText className="h-4 w-4" />
-                      DOCX
-                    </Button>
-                  </a>
-                )}
-              </>
+            {exportResult?.docxUrl && (
+              <a href={exportResult.docxUrl} target="_blank" rel="noreferrer">
+                <Button variant="outline" size="sm" className="h-9 gap-1.5 rounded-xl border-border px-3 text-xs text-foreground hover:bg-muted">
+                  <FileText className="h-3.5 w-3.5" />
+                  DOCX
+                </Button>
+              </a>
             )}
 
             {!exportResult && (
-              <Button variant="outline" size="sm" onClick={handleExport} disabled={exporting}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 gap-1.5 rounded-xl border-border px-3.5 text-xs font-medium text-foreground hover:bg-muted"
+                onClick={handleExport}
+                disabled={exporting}
+              >
                 {exporting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <FileDown className="mr-2 h-4 w-4" />
+                  <FileDown className="h-3.5 w-3.5" />
                 )}
                 Save to History
               </Button>
@@ -176,10 +181,14 @@ export function RecordPreviewPage() {
           </div>
         </div>
         {error && (
-          <p className="border-t border-border px-6 py-2 text-sm text-destructive">{error}</p>
+          <p className="border-t border-destructive/20 bg-destructive/10 px-6 py-2 text-xs text-destructive">
+            {error}
+          </p>
         )}
       </header>
-      <DocumentPreview data={previewData} />
+      <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        <DocumentPreview data={previewData} />
+      </div>
     </div>
   );
 }

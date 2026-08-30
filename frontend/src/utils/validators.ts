@@ -9,9 +9,21 @@ export const workspaceSchema = z.object({
 export type WorkspaceFormData = z.infer<typeof workspaceSchema>;
 
 export const experimentRowSchema = z.object({
+  experimentNo: z.number().optional(),
   experimentName: z.string().min(1, 'Experiment name is required'),
   experimentDate: z.string().optional().or(z.literal('')),
   githubLink: z.string().url('Must be a valid URL').regex(/github\.com/, 'Must be a GitHub repository'),
 });
 
 export type ExperimentRowFormData = z.infer<typeof experimentRowSchema>;
+export type ExperimentRowData = ExperimentRowFormData & { experimentNo?: number };
+
+export interface SubjectFormData {
+  subjectName: string;
+  subjectCode: string;
+  subjectCodeAlt?: string;
+  studentName: string;
+  registerNumber: string;
+  semester?: string;
+  facultyName?: string;
+}

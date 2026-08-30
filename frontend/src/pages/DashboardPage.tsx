@@ -169,7 +169,7 @@ export function DashboardPage() {
               {stats.recentSubjects.map((s) => (
                 <Link
                   key={s._id}
-                  to={`/records/${s._id}`}
+                  to={`/subjects/${s._id}/experiments`}
                   className="flex items-center justify-between py-3 transition-colors hover:text-primary"
                 >
                   <div>
