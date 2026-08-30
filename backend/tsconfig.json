@@ -3,6 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "rootDir": "./src",           // Add this
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
@@ -11,6 +12,6 @@
     "resolveJsonModule": true,
     "jsx": "react-jsx"
   },
-  "include": ["src/**/*", "scripts/**/*", "tests/**/*"],
+  "include": ["src/**/*"], 
   "exclude": ["node_modules", "dist"]
 }
