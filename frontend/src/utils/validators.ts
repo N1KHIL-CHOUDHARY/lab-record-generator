@@ -1,18 +1,23 @@
 import { z } from 'zod';
 
 export const workspaceSchema = z.object({
-  subjectLine: z.string().min(1, 'Subject is required'),
-  studentName: z.string().min(1, 'Student name is required'),
-  registerNumber: z.string().min(1, 'Register number is required'),
+  subjectLine: z.string().trim().min(1, 'Subject code & name are required (e.g. 19MA220 - Mathematics for AI)'),
+  studentName: z.string().trim().min(1, 'Student name is required'),
+  registerNumber: z.string().trim().min(1, 'Register number is required'),
 });
 
 export type WorkspaceFormData = z.infer<typeof workspaceSchema>;
 
 export const experimentRowSchema = z.object({
-  experimentNo: z.number().optional(),
-  experimentName: z.string().min(1, 'Experiment name is required'),
-  experimentDate: z.string().optional().or(z.literal('')),
-  githubLink: z.string().url('Must be a valid URL').regex(/github\.com/, 'Must be a GitHub repository'),
+  experimentNo: z.number().min(1, 'Experiment # must be at least 1'),
+  experimentDate: z.string().trim().min(1, 'Date is required'),
+  experimentName: z.string().trim().min(1, 'Experiment title is required'),
+  githubLink: z
+    .string()
+    .trim()
+    .min(1, 'GitHub repository URL is required')
+    .url('Must be a valid URL starting with https://')
+    .refine((val) => val.includes('github.com'), 'Must be a GitHub repository URL (e.g. https://github.com/user/repo)'),
 });
 
 export type ExperimentRowFormData = z.infer<typeof experimentRowSchema>;

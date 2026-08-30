@@ -161,8 +161,8 @@ export function DocumentPreview({ data, className, embedded }: DocumentPreviewPr
                             <span style={{ fontSize: '9pt', color: '#aaa' }}>QR</span>
                           )}
                         </td>
-                        <td className="cell-mark" />
-                        <td className="cell-sig" />
+                        <td className="cell-mark">&nbsp;</td>
+                        <td className="cell-sig">&nbsp;</td>
                       </tr>
                     );
                   })

@@ -102,11 +102,13 @@ export function AppLayout() {
   );
 
   return (
-    <div className="flex min-h-screen bg-background">
-      <aside className="hidden w-64 shrink-0 border-r border-border lg:block">
+    <div className="flex h-screen overflow-hidden bg-background">
+      {/* Desktop Fixed Sidebar */}
+      <aside className="hidden h-screen w-64 shrink-0 border-r border-border bg-card lg:flex lg:flex-col">
         <Sidebar />
       </aside>
 
+      {/* Mobile Drawer */}
       <AnimatePresence>
         {mobileOpen && (
           <div className="fixed inset-0 z-50 lg:hidden">
@@ -131,8 +133,9 @@ export function AppLayout() {
         )}
       </AnimatePresence>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 lg:hidden">
+      {/* Main Content Area - Only this scrolls */}
+      <div className="flex h-screen min-w-0 flex-1 flex-col overflow-hidden">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-border bg-card px-4 lg:hidden">
           <Link to="/records/new" className="flex items-center gap-2">
             <FlaskConical className="h-5 w-5 text-foreground" />
             <span className="text-sm font-semibold tracking-tight text-foreground">
@@ -149,7 +152,7 @@ export function AppLayout() {
           </Button>
         </header>
 
-        <main className="flex-1 overflow-auto p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

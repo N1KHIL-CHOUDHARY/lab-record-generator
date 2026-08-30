@@ -63,6 +63,19 @@ const FOOTER_TABLE_BORDERS = {
   insideVertical: NO_BORDER,
 };
 
+const CELL_BORDERS = {
+  top: BLACK_BORDER,
+  bottom: BLACK_BORDER,
+  left: BLACK_BORDER,
+  right: BLACK_BORDER,
+};
+const FOOTER_CELL_BORDERS = {
+  top: NO_BORDER,
+  bottom: NO_BORDER,
+  left: NO_BORDER,
+  right: NO_BORDER,
+};
+
 function timesRun(text: string, opts?: { bold?: boolean; sizePt?: number; color?: string; underline?: boolean }) {
   return new TextRun({
     text,
@@ -75,7 +88,7 @@ function timesRun(text: string, opts?: { bold?: boolean; sizePt?: number; color?
 }
 
 function cellBorders() {
-  return TABLE_BORDERS;
+  return CELL_BORDERS;
 }
 
 function columnWidths(): number[] {
@@ -323,7 +336,7 @@ export async function buildLabRecordDocx(data: LabRecordData): Promise<Buffer> {
           children: [
             new TableCell({
               width: { size: directColumnWidth, type: WidthType.DXA },
-              borders: FOOTER_TABLE_BORDERS,
+              borders: FOOTER_CELL_BORDERS,
               children: [
                 new Paragraph({
                   spacing: { before: inchesToTwip(0.28) },
@@ -333,7 +346,7 @@ export async function buildLabRecordDocx(data: LabRecordData): Promise<Buffer> {
             }),
             new TableCell({
               width: { size: directColumnWidth, type: WidthType.DXA },
-              borders: FOOTER_TABLE_BORDERS,
+              borders: FOOTER_CELL_BORDERS,
               children: [
                 new Paragraph({
                   alignment: AlignmentType.RIGHT,
@@ -351,7 +364,7 @@ export async function buildLabRecordDocx(data: LabRecordData): Promise<Buffer> {
           children: [
             new TableCell({
               width: { size: directColumnWidth, type: WidthType.DXA },
-              borders: FOOTER_TABLE_BORDERS,
+              borders: FOOTER_CELL_BORDERS,
               children: [
                 new Paragraph({
                   spacing: { before: inchesToTwip(0.22) },
@@ -361,7 +374,7 @@ export async function buildLabRecordDocx(data: LabRecordData): Promise<Buffer> {
             }),
             new TableCell({
               width: { size: directColumnWidth, type: WidthType.DXA },
-              borders: FOOTER_TABLE_BORDERS,
+              borders: FOOTER_CELL_BORDERS,
               children: [
                 new Paragraph({
                   alignment: AlignmentType.RIGHT,

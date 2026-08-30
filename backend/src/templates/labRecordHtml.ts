@@ -102,6 +102,7 @@ export function getLabRecordStyles(): string {
       table-layout: fixed;
       margin: 0 auto;
       border: 1px solid #000;
+      empty-cells: show;
     }
     table.lab-table th,
     table.lab-table td {
@@ -206,8 +207,8 @@ export function buildLabRecordHtml(data: LabRecordData, options?: { embedStyles?
           <a href="${escapeHtml(exp.githubLink)}">${escapeHtml(exp.githubLink)}</a>
         </td>
         <td class="cell-qr">${qrSrc ? `<img src="${escapeHtml(qrSrc)}" alt="QR" />` : ''}</td>
-        <td class="cell-mark"></td>
-        <td class="cell-sig"></td>
+        <td class="cell-mark">&nbsp;</td>
+        <td class="cell-sig">&nbsp;</td>
       </tr>`;
     })
     .join('');
