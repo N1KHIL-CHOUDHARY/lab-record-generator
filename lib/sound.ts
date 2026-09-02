@@ -40,10 +40,37 @@ async function loadAudioBuffer(ctx: AudioContext) {
   }
 }
 
+const MUTE_STORAGE_KEY = 'labora_sound_muted';
+
+export function isSoundMuted(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem(MUTE_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+export function setSoundMuted(muted: boolean) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(MUTE_STORAGE_KEY, String(muted));
+    window.dispatchEvent(new Event('labora_sound_muted_change'));
+  } catch {}
+}
+
+export function toggleSoundMuted(): boolean {
+  const next = !isSoundMuted();
+  setSoundMuted(next);
+  return next;
+}
+
 /**
  * Plays your exact /click.mp3 file directly from decoded memory buffer.
  */
 export async function playClickSound(volume = 0.35) {
+  if (isSoundMuted()) return;
+
   try {
     const ctx = getAudioContext();
     if (!ctx) return;

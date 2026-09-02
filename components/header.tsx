@@ -14,12 +14,37 @@ import {
   Moon,
   LogOut,
   Sparkles,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
+import { isSoundMuted, toggleSoundMuted } from '@/lib/sound';
 
 export default function Header({ check = true }: { check?: boolean } = {}) {
   const pathname = usePathname();
   const { user, loading, signOutUser } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const [muted, setMuted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMuted(isSoundMuted());
+
+    const handleMuteChange = () => {
+      setMuted(isSoundMuted());
+    };
+
+    window.addEventListener('labora_sound_muted_change', handleMuteChange);
+    window.addEventListener('storage', handleMuteChange);
+
+    return () => {
+      window.removeEventListener('labora_sound_muted_change', handleMuteChange);
+      window.removeEventListener('storage', handleMuteChange);
+    };
+  }, []);
+
+  const handleToggleMute = () => {
+    const next = toggleSoundMuted();
+    setMuted(next);
+  };
 
   const isEditorActive = pathname === '/dashboard' || pathname === '/';
   const isHistoryActive = pathname.startsWith('/history');
@@ -109,7 +134,7 @@ export default function Header({ check = true }: { check?: boolean } = {}) {
           </button>}
 
           {/* Dark / Light Mode Toggle Button */}
-           <button
+          <button
             onClick={() => toggleTheme()}
             title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
             aria-label="Toggle theme"
@@ -119,6 +144,20 @@ export default function Header({ check = true }: { check?: boolean } = {}) {
               <Sun className="h-4 w-4 transition-transform hover:rotate-45" />
             ) : (
               <Moon className="h-4 w-4 transition-transform hover:-rotate-12" />
+            )}
+          </button>
+
+          {/* Mute / Unmute Sound Toggle Button */}
+          <button
+            onClick={handleToggleMute}
+            title={muted ? 'Unmute UI sound' : 'Mute UI sound'}
+            aria-label={muted ? 'Unmute UI sound' : 'Mute UI sound'}
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-600 transition-all hover:bg-zinc-100 hover:text-zinc-900 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 shadow-xs"
+          >
+            {muted ? (
+              <VolumeX className="h-4 w-4 text-zinc-400 dark:text-zinc-500" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
             )}
           </button>
 
