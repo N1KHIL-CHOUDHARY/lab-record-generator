@@ -81,7 +81,7 @@ export default function Header() {
             </Link>
 
             <Link
-              href="/history"
+              href="/history" id="tour-history-btn"
               onClick={() => playClick()}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                 isHistoryActive
@@ -99,6 +99,20 @@ export default function Header() {
 
         {/* Right: Theme Toggle & User Profile */}
         <div className="flex items-center gap-2.5 sm:gap-3">
+          {/* Re-Tour Guided Walkthrough Button */}
+          <button
+            onClick={() => {
+              playClick();
+              localStorage.removeItem('labora_tour_completed');
+              window.location.reload();
+            }}
+            title="Start Guided Tour"
+            aria-label="Start Guided Tour"
+            className="flex h-9 items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-2.5 text-xs font-medium text-zinc-600 transition-all hover:bg-zinc-100 hover:text-zinc-900 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 shadow-xs"
+          >
+            <span className="hidden sm:inline">Tour</span>
+          </button>
+
           {/* Dark / Light Mode Toggle Button */}
           <button
             onClick={() => {

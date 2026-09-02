@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import Header from '@/components/header';
 import DocumentPreviewModal from '@/components/document-preview-modal';
+import WorkspaceTour from '@/components/workspace-tour';
 import { generatePDF, generateDOCX, mergeWithBonafide } from '@/lib/document-generator';
 import { useSound } from '@/hooks/use-sound';
 import {
@@ -447,6 +448,7 @@ export default function DashboardPage() {
       }`}
     >
       <Header />
+      <WorkspaceTour />
 
       {/* Interactive Post-Export Toast Notification (Theme Aware) */}
       {toast && (
@@ -540,6 +542,7 @@ export default function DashboardPage() {
 
         {/* Section 1: Document Details Card */}
         <div
+          id="tour-meta-form"
           className={`rounded-2xl p-6 border shadow-sm transition-all mb-8 ${
             isDark ? 'bg-zinc-900/40 border-zinc-800/80' : 'bg-white border-zinc-200'
           }`}
@@ -617,6 +620,7 @@ export default function DashboardPage() {
             return (
               <div
                 key={exp.id}
+                id={index === 0 ? 'tour-exp-card-0' : undefined}
                 className={`rounded-2xl p-5 border shadow-sm transition-all hover:shadow-md ${
                   isDark
                     ? 'bg-zinc-900/40 border-zinc-800/80 hover:border-zinc-700'
@@ -715,6 +719,7 @@ export default function DashboardPage() {
         {/* Section 3: Add & Actions */}
         <div className="flex flex-col mt-5 space-y-6">
           <button
+            id="tour-add-btn"
             onClick={() => {
               playClick();
               handleAddExperiment();
@@ -732,6 +737,7 @@ export default function DashboardPage() {
 
           {/* Action Toolbar */}
           <div
+            id="tour-action-bar"
             className={`w-full rounded-2xl border p-2.5 transition-colors ${
               isDark ? 'border-zinc-800 bg-zinc-900/60' : 'border-zinc-200 bg-white shadow-sm'
             }`}

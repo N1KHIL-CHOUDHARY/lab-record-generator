@@ -17,9 +17,9 @@ export function useSound(soundPath: string = '/click.mp3') {
         return audio;
       });
       isReadyRef.current = true;
-      console.log(`[useSound] Initialized audio pool (${POOL_SIZE} nodes) for: ${soundPath}`);
+    
     } catch (err) {
-      console.error('[useSound] Failed to initialize audio pool:', err);
+      
     }
 
     return () => {
@@ -33,10 +33,10 @@ export function useSound(soundPath: string = '/click.mp3') {
   }, [soundPath]);
 
   const play = useCallback((volume: number = 0.4) => {
-    console.log('[useSound] play() invoked');
+  
 
     if (!isReadyRef.current || audioPoolRef.current.length === 0) {
-      console.warn('[useSound] Audio pool not ready yet or unavailable.');
+    
       return;
     }
 
@@ -51,14 +51,14 @@ export function useSound(soundPath: string = '/click.mp3') {
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
-            console.log('[useSound] Audio playback succeeded ✓');
+          
           })
           .catch((err) => {
-            console.warn('[useSound] Playback prevented by browser autoplay policy or missing gesture:', err);
+          
           });
       }
     } catch (err) {
-      console.error('[useSound] Unexpected error during audio playback:', err);
+      
     }
   }, []);
 

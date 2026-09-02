@@ -38,8 +38,8 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-4 sm:p-6">
         <div className="w-full max-w-md rounded-2xl border border-indigo-100 bg-white p-8 shadow-xl shadow-indigo-500/5">
           <div className="text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl  mb-4">
-              <FlaskConical className="h-6 w-6  dark:text-white text-black" />
+            <div className="mx-auto flex h-12 w-12 items-center justify-center text-black  rounded-2xl  mb-4">
+              <FlaskConical className="h-6 w-6" />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Welcome to Labora</h1>
             <p className="mt-2 text-xs sm:text-sm text-neutral-500">
