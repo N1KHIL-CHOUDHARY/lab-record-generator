@@ -8,7 +8,6 @@ import Header from '@/components/header';
 import DocumentPreviewModal from '@/components/document-preview-modal';
 import WorkspaceTour from '@/components/workspace-tour';
 import { generatePDF, generateDOCX, mergeWithBonafide } from '@/lib/document-generator';
-import { useSound } from '@/hooks/use-sound';
 import {
   Plus,
   Trash2,
@@ -44,7 +43,6 @@ export default function DashboardPage() {
   const { user, loading } = useAuth();
   const { isDark } = useTheme();
   const router = useRouter();
-  const { play: playClick } = useSound();
 
   const [activeRecordId, setActiveRecordId] = useState<string>(() => `rec-${Date.now()}`);
   const [courseTitle, setCourseTitle] = useState('');
@@ -447,7 +445,7 @@ export default function DashboardPage() {
         isDark ? 'bg-zinc-950 text-zinc-100' : 'bg-zinc-50 text-zinc-900'
       }`}
     >
-      <Header />
+      <Header check={true}/>
       <WorkspaceTour />
 
       {/* Interactive Post-Export Toast Notification (Theme Aware) */}
@@ -475,10 +473,7 @@ export default function DashboardPage() {
             )}
             <span className="leading-snug flex-1 font-medium">{toast.message}</span>
             <button
-              onClick={() => {
-                playClick();
-                setToast(null);
-              }}
+              onClick={() => setToast(null)}
               type="button"
               className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-0.5 rounded-lg transition"
               title="Dismiss"
@@ -491,7 +486,6 @@ export default function DashboardPage() {
             <div className="flex items-center gap-2 pt-2 border-t border-zinc-200/70 dark:border-zinc-800/80">
               <button
                 onClick={() => {
-                  playClick();
                   setToast(null);
                   handleStartNewRecord();
                 }}
@@ -504,7 +498,6 @@ export default function DashboardPage() {
 
               <button
                 onClick={() => {
-                  playClick();
                   setToast(null);
                   router.push('/history');
                 }}
@@ -527,10 +520,7 @@ export default function DashboardPage() {
         <div className="mb-6 flex items-center justify-between gap-4">
           <h1 className="text-2xl font-bold tracking-tight">Document Details</h1>
           <button
-            onClick={() => {
-              playClick();
-              handleStartNewRecord();
-            }}
+            onClick={() => handleStartNewRecord()}
             type="button"
             title="Start a new blank lab record"
             className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3.5 py-2 text-xs font-semibold shadow-sm transition hover:bg-zinc-800 dark:hover:bg-white active:scale-95"
@@ -639,10 +629,7 @@ export default function DashboardPage() {
                   </div>
 
                   <button
-                    onClick={() => {
-                      playClick();
-                      handleDeleteExperiment(exp.id);
-                    }}
+                    onClick={() => handleDeleteExperiment(exp.id)}
                     disabled={isOnlyOne}
                     type="button"
                     title={isOnlyOne ? 'At least one experiment is required' : 'Delete experiment'}
@@ -720,10 +707,7 @@ export default function DashboardPage() {
         <div className="flex flex-col mt-5 space-y-6">
           <button
             id="tour-add-btn"
-            onClick={() => {
-              playClick();
-              handleAddExperiment();
-            }}
+            onClick={() => handleAddExperiment()}
             type="button"
             className={`w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed py-4 text-sm font-semibold transition-all active:scale-[0.99] ${
               isDark
@@ -745,10 +729,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {/* Direct Save to History Button */}
               <button
-                onClick={() => {
-                  playClick();
-                  saveInputDataToHistory(false);
-                }}
+                onClick={() => saveInputDataToHistory(false)}
                 disabled={!isFormValid}
                 type="button"
                 title={!isFormValid ? 'Fill required fields to save' : 'Save inputs to history'}
@@ -764,10 +745,7 @@ export default function DashboardPage() {
 
               {/* Preview Button */}
               <button
-                onClick={() => {
-                  playClick();
-                  handlePreviewClick();
-                }}
+                onClick={() => handlePreviewClick()}
                 disabled={!isFormValid}
                 type="button"
                 title={!isFormValid ? 'Fill required fields to preview' : 'Preview Document'}
@@ -783,10 +761,7 @@ export default function DashboardPage() {
 
               {/* DOCX Button */}
               <button
-                onClick={() => {
-                  playClick();
-                  handleDownloadDocx();
-                }}
+                onClick={() => handleDownloadDocx()}
                 disabled={!isFormValid || isDocxGenerating || isPdfGenerating}
                 type="button"
                 className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
@@ -801,10 +776,7 @@ export default function DashboardPage() {
 
               {/* PDF Button */}
               <button
-                onClick={() => {
-                  playClick();
-                  handlePdfDownloadClick();
-                }}
+                onClick={() => handlePdfDownloadClick()}
                 disabled={!isFormValid || isPdfGenerating || isDocxGenerating}
                 type="button"
                 className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-3 text-xs sm:text-sm font-semibold text-white shadow-sm transition-all hover:bg-rose-700 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40"
@@ -842,19 +814,13 @@ export default function DashboardPage() {
 
             <div className="flex flex-col gap-3 mb-6">
               <button
-                onClick={() => {
-                  playClick();
-                  handleBonafideChoice(true);
-                }}
+                onClick={() => handleBonafideChoice(true)}
                 className="w-full py-3 px-4 rounded-xl font-semibold transition bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center gap-2 shadow-lg"
               >
                 Download with Bonafide
               </button>
               <button
-                onClick={() => {
-                  playClick();
-                  handleBonafideChoice(false);
-                }}
+                onClick={() => handleBonafideChoice(false)}
                 className={`w-full py-3 px-4 rounded-xl font-semibold transition border-2 ${
                   isDark
                     ? 'border-zinc-800 hover:bg-white/10 text-white'
@@ -888,10 +854,7 @@ export default function DashboardPage() {
 
             <div className="mt-4 flex justify-end">
               <button
-                onClick={() => {
-                  playClick();
-                  setShowBonafideModal(false);
-                }}
+                onClick={() => setShowBonafideModal(false)}
                 className={`text-xs underline ${
                   isDark ? 'text-gray-500 hover:text-gray-400' : 'text-gray-400 hover:text-gray-600'
                 }`}

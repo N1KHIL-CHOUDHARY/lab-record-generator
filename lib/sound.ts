@@ -1,51 +1,85 @@
 'use client';
 
-const POOL_SIZE = 6;
-let audioPool: HTMLAudioElement[] = [];
-let poolIndex = 0;
-let isInitialized = false;
+let audioCtx: AudioContext | null = null;
+let audioBuffer: AudioBuffer | null = null;
+let isFetching = false;
 
-function initPool() {
-  if (isInitialized || typeof window === 'undefined') return;
+function getAudioContext(): AudioContext | null {
+  if (typeof window === 'undefined') return null;
+
+  if (!audioCtx) {
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+
+    if (AudioContextClass) {
+      audioCtx = new AudioContextClass();
+    }
+  }
+
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().catch(() => {});
+  }
+
+  return audioCtx;
+}
+
+// Pre-fetch and decode your exact /click.mp3 into memory
+async function loadAudioBuffer(ctx: AudioContext) {
+  if (audioBuffer || isFetching) return;
+  isFetching = true;
 
   try {
-    audioPool = Array.from({ length: POOL_SIZE }, () => {
-      const audio = new Audio('/click.mp3');
-      audio.preload = 'auto';
-      return audio;
-    });
-    isInitialized = true;
-  } catch {
-    // Gracefully handle environments where Audio is blocked/unavailable
+    const response = await fetch('/click.mp3');
+    const arrayBuffer = await response.arrayBuffer();
+    audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+  } catch (err) {
+    console.error('Failed to load /click.mp3 buffer:', err);
+  } finally {
+    isFetching = false;
   }
 }
 
 /**
- * Plays /click.mp3 with round-robin concurrency.
+ * Plays your exact /click.mp3 file directly from decoded memory buffer.
  */
-export function playClickSound(volume = 0.35) {
-  if (typeof window === 'undefined') return;
-
-  if (!isInitialized) {
-    initPool();
-  }
-
-  if (audioPool.length === 0) return;
-
+export async function playClickSound(volume = 0.35) {
   try {
-    const sound = audioPool[poolIndex];
-    poolIndex = (poolIndex + 1) % audioPool.length;
+    const ctx = getAudioContext();
+    if (!ctx) return;
 
-    sound.volume = Math.max(0, Math.min(1, volume));
-    sound.currentTime = 0;
-
-    const playPromise = sound.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        // Suppress browser autoplay rejections
-      });
+    if (!audioBuffer) {
+      await loadAudioBuffer(ctx);
     }
+
+    if (!audioBuffer) return;
+
+    // Create a one-shot buffer source from your exact MP3 data
+    const source = ctx.createBufferSource();
+    source.buffer = audioBuffer;
+
+    const gainNode = ctx.createGain();
+    gainNode.gain.setValueAtTime(Math.max(0, Math.min(1, volume)), ctx.currentTime);
+
+    source.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    source.start(0);
   } catch {
-    // Prevent UI interruption
+    // Suppress browser autoplay rejections
   }
+}
+
+// Preload the sound immediately on the client
+if (typeof window !== 'undefined') {
+  window.addEventListener(
+    'pointerdown',
+    () => {
+      const ctx = getAudioContext();
+      if (ctx && !audioBuffer) {
+        loadAudioBuffer(ctx);
+      }
+    },
+    { once: true }
+  );
 }

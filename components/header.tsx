@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
-import { useSound } from '@/hooks/use-sound';
 import {
   FlaskConical,
   FileEdit,
@@ -17,11 +16,10 @@ import {
   Sparkles,
 } from 'lucide-react';
 
-export default function Header() {
+export default function Header({ check = true }: { check?: boolean } = {}) {
   const pathname = usePathname();
   const { user, loading, signOutUser } = useAuth();
   const { isDark, toggleTheme } = useTheme();
-  const { play: playClick } = useSound('/click.mp3');
 
   const isEditorActive = pathname === '/dashboard' || pathname === '/';
   const isHistoryActive = pathname.startsWith('/history');
@@ -55,7 +53,6 @@ export default function Header() {
           {/* Brand */}
           <Link
             href="/dashboard"
-            onClick={() => playClick()}
             className="flex items-center gap-2.5 transition-opacity hover:opacity-90"
           >
             <div className="flex items-center gap-1.5">
@@ -63,11 +60,10 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* Navigation Tabs with Active Indicator Pills */}
+      
           <nav className="flex items-center gap-1 rounded-xl bg-zinc-100/80 p-1 dark:bg-zinc-900/80 border border-zinc-200/50 dark:border-zinc-800/60">
             <Link
               href="/dashboard"
-              onClick={() => playClick()}
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                 isEditorActive
                   ? isDark
@@ -81,8 +77,8 @@ export default function Header() {
             </Link>
 
             <Link
-              href="/history" id="tour-history-btn"
-              onClick={() => playClick()}
+              href="/history"
+              id="tour-history-btn"
               className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
                 isHistoryActive
                   ? isDark
@@ -97,12 +93,11 @@ export default function Header() {
           </nav>
         </div>
 
-        {/* Right: Theme Toggle & User Profile */}
+      
         <div className="flex items-center gap-2.5 sm:gap-3">
-          {/* Re-Tour Guided Walkthrough Button */}
-          <button
+         
+          {check && <button
             onClick={() => {
-              playClick();
               localStorage.removeItem('labora_tour_completed');
               window.location.reload();
             }}
@@ -111,14 +106,11 @@ export default function Header() {
             className="flex h-9 items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-2.5 text-xs font-medium text-zinc-600 transition-all hover:bg-zinc-100 hover:text-zinc-900 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 shadow-xs"
           >
             <span className="hidden sm:inline">Tour</span>
-          </button>
+          </button>}
 
           {/* Dark / Light Mode Toggle Button */}
-          <button
-            onClick={() => {
-              playClick();
-              toggleTheme();
-            }}
+           <button
+            onClick={() => toggleTheme()}
             title={isDark ? 'Switch to Light mode' : 'Switch to Dark mode'}
             aria-label="Toggle theme"
             className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 bg-white text-zinc-600 transition-all hover:bg-zinc-100 hover:text-zinc-900 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 shadow-xs"
@@ -129,6 +121,8 @@ export default function Header() {
               <Moon className="h-4 w-4 transition-transform hover:-rotate-12" />
             )}
           </button>
+
+          
 
           
           {loading ? (
@@ -158,10 +152,7 @@ export default function Header() {
 
               {/* Subtle Sign Out Action Button */}
               <button
-                onClick={() => {
-                  playClick();
-                  signOutUser();
-                }}
+                onClick={() => signOutUser()}
                 title="Sign Out"
                 aria-label="Sign Out"
                 className="flex h-9 w-9 items-center justify-center rounded-xl border border-zinc-200 text-zinc-500 transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 active:scale-95 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-rose-900/50 dark:hover:bg-rose-950/40 dark:hover:text-rose-400"
@@ -172,7 +163,6 @@ export default function Header() {
           ) : (
             <Link
               href="/login"
-              onClick={() => playClick()}
               className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
             >
               Sign In

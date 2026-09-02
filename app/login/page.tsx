@@ -4,13 +4,10 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { FlaskConical, AlertCircle } from 'lucide-react';
-import { useSound } from '@/hooks/use-sound';
-
 export default function LoginPage() {
   const { user, loading, signInWithGoogle } = useAuth();
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const { play: playClick } = useSound();
 
   useEffect(() => {
     if (user && !loading) {
@@ -56,10 +53,7 @@ export default function LoginPage() {
 
           <div className="mt-8 space-y-4">
             <button
-              onClick={() => {
-                playClick();
-                handleSignIn();
-              }}
+              onClick={() => handleSignIn()}
               disabled={loading}
               className="w-full flex items-center justify-center gap-3 rounded-xl border border-neutral-300 bg-white px-4 py-3.5 text-sm font-semibold text-neutral-700 shadow-sm transition hover:bg-neutral-50 hover:border-neutral-400 active:scale-[0.99] disabled:opacity-50"
             >

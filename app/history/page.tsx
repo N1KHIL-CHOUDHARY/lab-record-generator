@@ -9,7 +9,6 @@ import Header from '@/components/header';
 import DocumentPreviewModal from '@/components/document-preview-modal';
 import { generatePDF, generateDOCX, mergeWithBonafide } from '@/lib/document-generator';
 import { SavedRecord } from '@/types/record';
-import { useSound } from '@/hooks/use-sound';
 import {
   History,
   FileText,
@@ -29,7 +28,6 @@ export default function HistoryPage() {
   const { user, loading } = useAuth();
   const { isDark } = useTheme();
   const router = useRouter();
-  const { play: playClick } = useSound();
 
   const [records, setRecords] = useState<SavedRecord[]>([]);
   const [isDownloadingPdfId, setIsDownloadingPdfId] = useState<string | null>(null);
@@ -273,7 +271,7 @@ export default function HistoryPage() {
         isDark ? 'bg-zinc-950 text-zinc-100' : 'bg-zinc-50 text-zinc-900'
       }`}
     >
-      <Header />
+      <Header check={false} />
 
       {/* Notification Toast (Theme Aware) */}
       {toastMessage && (
@@ -318,10 +316,7 @@ export default function HistoryPage() {
           <div className="flex items-center gap-2.5">
             {records.length > 0 && (
               <button
-                onClick={() => {
-                  playClick();
-                  handleClearAllHistory();
-                }}
+                onClick={() => handleClearAllHistory()}
                 type="button"
                 className={`text-xs px-3 py-2 rounded-xl font-medium transition active:scale-95 ${
                   isDark
@@ -334,10 +329,7 @@ export default function HistoryPage() {
             )}
 
             <button
-              onClick={() => {
-                playClick();
-                handleCreateNewRecord();
-              }}
+              onClick={() => handleCreateNewRecord()}
               type="button"
               className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4 py-2 text-xs font-semibold shadow-sm transition hover:bg-zinc-800 dark:hover:bg-white active:scale-95"
             >
@@ -364,10 +356,7 @@ export default function HistoryPage() {
               Create your first lab record in the Editor to preview, export DOCX, or download PDF anytime.
             </p>
             <button
-              onClick={() => {
-                playClick();
-                handleCreateNewRecord();
-              }}
+              onClick={() => handleCreateNewRecord()}
               type="button"
               className="mt-6 inline-flex items-center gap-2 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-4.5 py-2.5 text-xs font-semibold shadow-sm transition hover:bg-zinc-800 dark:hover:bg-white active:scale-95"
             >
@@ -424,10 +413,7 @@ export default function HistoryPage() {
                 <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
                   {/* On-Demand Preview */}
                   <button
-                    onClick={() => {
-                      playClick();
-                      handlePreviewRecord(record);
-                    }}
+                    onClick={() => handlePreviewRecord(record)}
                     type="button"
                     title="Preview Document"
                     className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition active:scale-95 ${
@@ -442,10 +428,7 @@ export default function HistoryPage() {
 
                   {/* On-Demand DOCX */}
                   <button
-                    onClick={() => {
-                      playClick();
-                      handleDownloadDocx(record);
-                    }}
+                    onClick={() => handleDownloadDocx(record)}
                     disabled={isDownloadingDocxId === record.id}
                     type="button"
                     title="Download DOCX"
@@ -465,10 +448,7 @@ export default function HistoryPage() {
 
                   {/* On-Demand PDF */}
                   <button
-                    onClick={() => {
-                      playClick();
-                      handleDownloadPdf(record);
-                    }}
+                    onClick={() => handleDownloadPdf(record)}
                     disabled={isDownloadingPdfId === record.id}
                     type="button"
                     title="Download PDF"
@@ -488,10 +468,7 @@ export default function HistoryPage() {
 
                   {/* Edit in Workspace */}
                   <button
-                    onClick={() => {
-                      playClick();
-                      handleOpenInEditor(record);
-                    }}
+                    onClick={() => handleOpenInEditor(record)}
                     type="button"
                     title="Edit in Workspace"
                     className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-95"
@@ -502,10 +479,7 @@ export default function HistoryPage() {
 
                   {/* Delete */}
                   <button
-                    onClick={() => {
-                      playClick();
-                      handleDeleteRecord(record.id);
-                    }}
+                    onClick={() => handleDeleteRecord(record.id)}
                     type="button"
                     title="Remove from history"
                     className="flex h-8 w-8 items-center justify-center rounded-xl text-zinc-400 transition hover:bg-rose-500/10 hover:text-rose-600 active:scale-95"
@@ -534,20 +508,14 @@ export default function HistoryPage() {
 
             <div className="flex flex-col gap-3 mb-6">
               <button
-                onClick={() => {
-                  playClick();
-                  handleBonafideChoice(true);
-                }}
+                onClick={() => handleBonafideChoice(true)}
                 type="button"
                 className="w-full py-3 px-4 rounded-xl font-semibold transition bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center gap-2 shadow-lg"
               >
                 Download with Bonafide
               </button>
               <button
-                onClick={() => {
-                  playClick();
-                  handleBonafideChoice(false);
-                }}
+                onClick={() => handleBonafideChoice(false)}
                 type="button"
                 className={`w-full py-3 px-4 rounded-xl font-semibold transition border-2 ${
                   isDark
@@ -583,7 +551,6 @@ export default function HistoryPage() {
             <div className="mt-4 flex justify-end">
               <button
                 onClick={() => {
-                  playClick();
                   setShowBonafideModal(false);
                   setPendingPdfRecord(null);
                 }}

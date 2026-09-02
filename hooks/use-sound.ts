@@ -17,9 +17,9 @@ export function useSound(soundPath: string = '/click.mp3') {
         return audio;
       });
       isReadyRef.current = true;
-    
+      console.log(`[useSound] Initialized audio pool (${POOL_SIZE} nodes) for: ${soundPath}`);
     } catch (err) {
-      
+      console.error('[useSound] Failed to initialize audio pool:', err);
     }
 
     return () => {
@@ -33,14 +33,14 @@ export function useSound(soundPath: string = '/click.mp3') {
   }, [soundPath]);
 
   const play = useCallback((volume: number = 0.4) => {
-  
-
-    if (!isReadyRef.current || audioPoolRef.current.length === 0) {
-    
-      return;
-    }
-
     try {
+      if (!isReadyRef.current || audioPoolRef.current.length === 0) {
+        const fallback = new Audio(soundPath);
+        fallback.volume = Math.max(0, Math.min(1, volume));
+        fallback.play().catch(() => {});
+        return;
+      }
+
       const audio = audioPoolRef.current[poolIndexRef.current];
       poolIndexRef.current = (poolIndexRef.current + 1) % audioPoolRef.current.length;
 
@@ -49,18 +49,12 @@ export function useSound(soundPath: string = '/click.mp3') {
 
       const playPromise = audio.play();
       if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-          
-          })
-          .catch((err) => {
-          
-          });
+        playPromise.catch(() => {});
       }
     } catch (err) {
-      
+        console.error('[useSound] Unexpected error during audio playback:', err);
     }
-  }, []);
+  }, [soundPath]);
 
   return { play };
 }
