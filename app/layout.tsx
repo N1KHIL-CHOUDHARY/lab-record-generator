@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Josefin_Sans } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
@@ -13,49 +13,83 @@ const josefinSans = Josefin_Sans({
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://labora.nikhil-dev.in';
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#fafafa' },
+    { media: '(prefers-color-scheme: dark)', color: '#09090b' },
+  ],
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+  // Front-loading high-volume keyword tokens
   title: {
-    default: 'Lab Record Generator | Saveetha Engineering College Format',
-    template: '%s | Lab Record Generator',
+    default: 'Saveetha Lab Record Generator | Labora - SEC Lab Records & QR Format',
+    template: '%s | Labora - Lab Record Generator',
   },
   description:
-    'Fast, client-side lab record generator tailored for Saveetha Engineering College and Anna University formats. Auto-number experiments, embed QR codes, and export standardized PDFs/DOCXs instantly.',
+    'Saveetha Engineering College lab record generator. Create SEC format records with auto QR codes and export standardized PDF/DOCX records instantly.',
+  applicationName: 'Labora',
+  authors: [{ name: 'Nikhil R', url: 'https://nikhil-dev.in' }],
+  generator: 'Next.js',
   keywords: [
+    'saveetha lab record generator',
     'lab record generator',
-    'record generator',
+    'labora',
     'saveetha lab records',
     'saveetha engineering college lab record',
+    'sec lab record format',
     'lab record pdf generator',
-    'qr code lab record',
-    'anna university lab record',
-    'table of contents generator',
+    'qr code lab record generator',
+    'anna university lab record format',
+    'saveetha table of contents generator',
+    'saveetha engineering college',
+    'labora lab generator',
   ],
-  alternates: {
-    canonical: '/',
+  creator: 'Nikhil R',
+  publisher: 'Labora',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
   },
   openGraph: {
-    title: 'Lab Record Generator | Saveetha Engineering College Format',
+    title: 'Saveetha Lab Record Generator | Labora',
     description:
-      'Fast, client-side lab record generator tailored for Saveetha Engineering College and Anna University formats. Auto-number experiments, embed QR codes, and export standardized PDFs/DOCXs instantly.',
+      'The #1 client-side lab record generator for Saveetha Engineering College. Build verified table of contents, embed GitHub repo QR codes, and export standardized PDFs in seconds.',
     url: siteUrl,
-    siteName: 'Labora - Saveetha Lab Record Generator',
+    siteName: 'Labora',
     locale: 'en_IN',
     type: 'website',
     images: [
       {
         url: '/images/college-logo.png',
-        width: 800,
-        height: 600,
-        alt: 'Saveetha Engineering College Autonomous Logo',
+        width: 1200,
+        height: 630,
+        alt: 'Labora - Saveetha Engineering College Lab Record Generator',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Lab Record Generator | Saveetha Engineering College Format',
+    title: 'Saveetha Lab Record Generator | Labora',
     description:
-      'Fast, client-side lab record generator tailored for Saveetha Engineering College and Anna University formats.',
+      'Generate formatted Saveetha Engineering College lab records with automated GitHub verification QR codes and PDF/DOCX downloads.',
     images: ['/images/college-logo.png'],
   },
   icons: {
@@ -65,74 +99,96 @@ export const metadata: Metadata = {
     ],
     apple: '/images/college-logo.png',
   },
+  category: 'education',
 };
 
-const jsonLdWebApplication = {
+// Unified Linked Entity Schema (@graph) for Google Knowledge Graph
+const jsonLdGraph = {
   '@context': 'https://schema.org',
-  '@type': 'WebApplication',
-  name: 'Saveetha Lab Record Generator',
-  url: siteUrl,
-  applicationCategory: 'EducationalApplication',
-  operatingSystem: 'All',
-  description:
-    'Client-side tool to build formatted Saveetha Engineering College lab records with automatic experiment numbering, instant QR codes, and PDF/DOCX downloads.',
-  offers: {
-    '@type': 'Offer',
-    price: '0',
-    priceCurrency: 'INR',
-  },
-  featureList: [
-    'Saveetha Engineering College Table of Contents Format',
-    'Client-Side QR Code Generation',
-    'Automatic Experiment Numbering',
-    '1-Click PDF and DOCX Exports',
-    'Permanent GitHub Solution Linking',
-  ],
-};
-
-const jsonLdFaq = {
-  '@context': 'https://schema.org',
-  '@type': 'FAQPage',
-  mainEntity: [
+  '@graph': [
     {
-      '@type': 'Question',
-      name: 'How does the Saveetha lab record generator work?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'It allows students to input experiment details, automatically generates dynamic QR codes linked to their code or repository, formats the table of contents strictly matching Saveetha Engineering College requirements, and exports to PDF or DOCX format client-side.',
+      '@type': 'WebApplication',
+      '@id': `${siteUrl}/#webapp`,
+      name: 'Labora - Saveetha Lab Record Generator',
+      alternateName: [
+        'Labora',
+        'Saveetha Lab Record Generator',
+        'Lab Record Generator',
+        'SEC Lab Record Generator',
+      ],
+      url: siteUrl,
+      applicationCategory: 'EducationalApplication',
+      operatingSystem: 'Any',
+      browserRequirements: 'Requires JavaScript. Works in Chrome, Edge, Safari, Firefox.',
+      description:
+        'Client-side generator to build formatted Saveetha Engineering College lab records with automatic experiment numbering, instant QR codes, and PDF/DOCX downloads.',
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'INR',
+      },
+      featureList: [
+        'Saveetha Engineering College Table of Contents Format',
+        'Instant Client-Side QR Code Generation for GitHub Solutions',
+        'Automatic Sequential Experiment Numbering',
+        'Direct 1-Click PDF and DOCX Exports',
+        'Secure 100% Client-Side In-Memory Processing',
+      ],
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${siteUrl}/#website`,
+      url: siteUrl,
+      name: 'Labora',
+      publisher: {
+        '@type': 'Organization',
+        name: 'Labora Workspace',
+        url: siteUrl,
+        logo: `${siteUrl}/images/college-logo.png`,
+      },
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: `${siteUrl}/?q={search_term_string}`,
+        'query-input': 'required name=search_term_string',
       },
     },
     {
-      '@type': 'Question',
-      name: 'Does it support the official Saveetha Engineering College Table of Contents format?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes, it is designed specifically around the Saveetha Engineering College autonomous lab record layout, including Experiment Number, Date, Name of the Experiment, QR Code for source verification, Marks, and Staff Signature columns.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Is the QR code generated client-side?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes, all QR codes and document previews are generated 100% client-side in your browser for instant privacy and speed.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Can I export records to both PDF and DOCX formats?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes, you can export your completed lab record table of contents directly to PDF and Microsoft Word DOCX formats with a single click.',
-      },
-    },
-    {
-      '@type': 'Question',
-      name: 'Does it support Anna University lab record formats as well?',
-      acceptedAnswer: {
-        '@type': 'Answer',
-        text: 'Yes, the generated table and document structure follow standardized engineering laboratory format guidelines recognized across Anna University affiliated and autonomous engineering institutions.',
-      },
+      '@type': 'FAQPage',
+      '@id': `${siteUrl}/#faq`,
+      mainEntity: [
+        {
+          '@type': 'Question',
+          name: 'What is Labora?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Labora is a client-side document automation web app designed to generate standardized Saveetha Engineering College (SEC) and Anna University lab records, auto-format index tables, and generate QR codes for experiment repositories.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'How does the Saveetha lab record generator work?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Students input their experiment titles, dates, and code repository links. Labora converts the repository URLs into scannable verification QR codes and formats the entire document strictly according to Saveetha autonomous regulations.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Does it support official Saveetha Engineering College formats?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Yes, the output strictly satisfies the Saveetha Engineering College format including Experiment Number, Date, Experiment Name, Verification QR Code, Marks, and Staff Signature columns.',
+          },
+        },
+        {
+          '@type': 'Question',
+          name: 'Can I download the records as PDF and Word DOCX?',
+          acceptedAnswer: {
+            '@type': 'Answer',
+            text: 'Yes, Labora allows direct client-side generation and export to both standardized PDF and fully editable Microsoft Word (.docx) formats.',
+          },
+        },
+      ],
     },
   ],
 };
@@ -145,13 +201,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${josefinSans.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
+        <link rel="canonical" href={`${siteUrl}/`} />
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebApplication) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdGraph) }}
         />
       </head>
       <body className={`${josefinSans.className} min-h-full flex flex-col font-sans bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 antialiased selection:bg-blue-500 selection:text-white transition-colors duration-150`}>

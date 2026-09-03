@@ -133,7 +133,7 @@ export default function LandingPage() {
                     transition={{ duration: 0.5, delay: 0.06 }}
                     className="mx-auto max-w-[540px] text-[24px] font-semibold leading-[1.18] tracking-[-0.03em] text-[#121117] sm:text-[38px] sm:leading-[1.12] sm:tracking-[-0.04em] lg:mx-0 lg:text-[44px]"
                   >
-                    Instant Lab Record Generator for Saveetha Engineering College
+                    Saveetha Lab Record Generator
                   </motion.h1>
 
                   <motion.p
@@ -223,7 +223,7 @@ export default function LandingPage() {
                         <div className="relative mb-2.5 flex flex-col items-center border-b border-black/80 pb-2 text-center sm:mb-3 sm:pb-2.5">
                           <Image
                             src="/images/college-logo.png"
-                            alt="Saveetha Engineering College Autonomous Logo"
+                            alt="Saveetha Engineering College Lab Record Generator Logo"
                             width={180}
                             height={44}
                             priority
@@ -362,10 +362,55 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* Core Features & Ranking Subheadings */}
+        <section className="relative mx-auto max-w-[1240px] px-4 py-12 sm:px-8 sm:py-16">
+          <div className="mx-auto max-w-[680px] text-center mb-10 sm:mb-14">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-semibold tracking-[-0.02em] text-[#121117]">
+              Engineered for Saveetha Engineering College Regulations
+            </h2>
+            <p className="mt-2.5 text-xs sm:text-sm text-[#625d6d] leading-relaxed">
+              Standardized lab record indexing compliant with autonomous SEC regulations and Anna University guidelines.
+            </p>
+          </div>
 
-       
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6">
+            <div className="rounded-2xl border border-white/80 bg-white/75 p-6 shadow-[0_4px_20px_rgba(73,61,132,.06)] backdrop-blur-sm transition-all hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(73,61,132,.12)]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ede9fe] text-[#6d28d9] mb-4 shadow-2xs">
+                <FileText className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-semibold text-[#121117]">
+                SEC Autonomous Format Table of Contents
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-[#625d6d]">
+                Pre-configured tables with auto-incrementing experiment numbers, date validation, and faculty signature blocks conforming to SEC guidelines.
+              </p>
+            </div>
 
-  
+            <div className="rounded-2xl border border-white/80 bg-white/75 p-6 shadow-[0_4px_20px_rgba(73,61,132,.06)] backdrop-blur-sm transition-all hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(73,61,132,.12)]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ede9fe] text-[#6d28d9] mb-4 shadow-2xs">
+                <QrCode className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-semibold text-[#121117]">
+                Client-Side GitHub Verification QR Codes
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-[#625d6d]">
+                Zero-latency in-browser QR generation linking directly to student code repositories for fast lab faculty and examiner verification.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/80 bg-white/75 p-6 shadow-[0_4px_20px_rgba(73,61,132,.06)] backdrop-blur-sm transition-all hover:-translate-y-1 hover:shadow-[0_8px_30px_rgba(73,61,132,.12)]">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ede9fe] text-[#6d28d9] mb-4 shadow-2xs">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <h3 className="text-base font-semibold text-[#121117]">
+                Standardized PDF &amp; Word DOCX Export
+              </h3>
+              <p className="mt-2 text-xs leading-relaxed text-[#625d6d]">
+                One-click direct export to print-ready PDF and fully editable Microsoft Word (.docx) formats with exact college margin alignments.
+              </p>
+            </div>
+          </div>
+        </section>
       </main>
 
       <footer className="border-t border-[#d5d0e3] bg-[#e2ddf8] py-5 text-center text-xs text-[#716b80] sm:py-6">
