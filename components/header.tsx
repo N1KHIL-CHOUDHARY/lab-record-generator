@@ -124,8 +124,7 @@ export default function Header({ check = true }: { check?: boolean } = {}) {
           {check && <button
             onClick={() => {
               if (typeof window !== 'undefined') {
-                localStorage.removeItem('labora_tour_completed');
-                sessionStorage.setItem('labora_force_tour', 'true');
+                sessionStorage.removeItem('labora_force_tour');
                 window.dispatchEvent(new CustomEvent('labora_start_tour'));
               }
             }}

@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowRight,
@@ -17,10 +19,18 @@ import { Button } from '@/components/ui/button';
 import { createNoise2D } from 'simplex-noise';
 
 export default function LandingPage() {
+  const { user, loading: authLoading } = useAuth();
+  const router = useRouter();
   const heroRef = useRef<HTMLElement>(null);
   const rafRef = useRef<number | null>(null);
   const targetRef = useRef({ x: 0, y: 0 });
   const currentRef = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, authLoading, router]);
 
   useEffect(() => {
     const hero = heroRef.current;
@@ -70,6 +80,10 @@ export default function LandingPage() {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, []);
+
+  if (user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-[#e8e3ff] text-[#14131b]">

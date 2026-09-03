@@ -129,6 +129,9 @@ export default function WorkspaceTour() {
   // Listen for custom trigger event (e.g. from Header Tour button)
   useEffect(() => {
     const handleStartTour = () => {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('labora_force_tour');
+      }
       setIsOpen(true);
       setCurrentStep(0);
     };
@@ -184,6 +187,7 @@ export default function WorkspaceTour() {
     // 1. Immediately close tour and update local cache
     setIsOpen(false);
     if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('labora_force_tour');
       localStorage.setItem('labora_tour_completed', 'true');
     }
 
