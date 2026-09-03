@@ -14,6 +14,9 @@ import {
   DownloadCloud,
   History,
 } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export interface TourStep {
   targetId: string;
@@ -61,6 +64,7 @@ export const TOUR_STEPS: TourStep[] = [
 ];
 
 export default function WorkspaceTour() {
+  const { user, loading: authLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [targetRect, setTargetRect] = useState<{
@@ -70,16 +74,69 @@ export default function WorkspaceTour() {
     height: number;
   } | null>(null);
 
-  // Check localStorage on mount
+  // Check tour completion status on mount / auth change
   useEffect(() => {
-    const completed = localStorage.getItem('labora_tour_completed');
-    if (!completed) {
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-        setCurrentStep(0);
-      }, 400);
-      return () => clearTimeout(timer);
-    }
+    if (authLoading) return;
+
+    let isMounted = true;
+
+    const checkTourStatus = async () => {
+      // 1. Check if user explicitly triggered the tour
+      if (typeof window !== 'undefined' && sessionStorage.getItem('labora_force_tour') === 'true') {
+        sessionStorage.removeItem('labora_force_tour');
+        if (isMounted) {
+          setIsOpen(true);
+          setCurrentStep(0);
+        }
+        return;
+      }
+
+      // 2. Query Firestore if user is authenticated
+      if (user?.uid && db) {
+        try {
+          const userDocRef = doc(db, 'users', user.uid);
+          const userDoc = await getDoc(userDocRef);
+          if (userDoc.exists() && userDoc.data()?.hasSeenTour === true) {
+            localStorage.setItem('labora_tour_completed', 'true');
+            if (isMounted) setIsOpen(false);
+            return;
+          }
+        } catch (error) {
+          console.warn('Could not read tour status from Firestore:', error);
+        }
+      }
+
+      // 3. Fallback: check localStorage
+      const completed = typeof window !== 'undefined' ? localStorage.getItem('labora_tour_completed') : null;
+      if (!completed && isMounted) {
+        const timer = setTimeout(() => {
+          if (isMounted) {
+            setIsOpen(true);
+            setCurrentStep(0);
+          }
+        }, 400);
+        return () => clearTimeout(timer);
+      }
+    };
+
+    checkTourStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, authLoading]);
+
+  // Listen for custom trigger event (e.g. from Header Tour button)
+  useEffect(() => {
+    const handleStartTour = () => {
+      setIsOpen(true);
+      setCurrentStep(0);
+    };
+
+    window.addEventListener('labora_start_tour', handleStartTour);
+    return () => {
+      window.removeEventListener('labora_start_tour', handleStartTour);
+    };
   }, []);
 
   const updateTargetRect = useCallback(() => {
@@ -124,8 +181,26 @@ export default function WorkspaceTour() {
   }, [currentStep, isOpen, updateTargetRect]);
 
   const handleFinishTour = () => {
-    localStorage.setItem('labora_tour_completed', 'true');
+    // 1. Immediately close tour and update local cache
     setIsOpen(false);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('labora_tour_completed', 'true');
+    }
+
+    // 2. Persist completion to Firestore asynchronously if user is signed in
+    if (user?.uid && db) {
+      setDoc(
+        doc(db, 'users', user.uid),
+        {
+          email: user.email,
+          hasSeenTour: true,
+          tourCompletedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      ).catch((err) => {
+        console.warn('Failed to persist tour completion to Firestore:', err);
+      });
+    }
   };
 
   const handleNext = () => {
@@ -204,7 +279,7 @@ export default function WorkspaceTour() {
           />
         )}
 
-      {/* Floating Modal Card Container (bottom-sheet on mobile, bottom-right floating card on PC) */}
+        {/* Floating Modal Card Container (bottom-sheet on mobile, bottom-right floating card on PC) */}
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-end sm:items-end sm:justify-end p-4 sm:p-8 pointer-events-none">
           <motion.div
             key={currentStep}

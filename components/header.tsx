@@ -123,12 +123,15 @@ export default function Header({ check = true }: { check?: boolean } = {}) {
          
           {check && <button
             onClick={() => {
-              localStorage.removeItem('labora_tour_completed');
-              window.location.reload();
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem('labora_tour_completed');
+                sessionStorage.setItem('labora_force_tour', 'true');
+                window.dispatchEvent(new CustomEvent('labora_start_tour'));
+              }
             }}
             title="Start Guided Tour"
             aria-label="Start Guided Tour"
-            className="flex h-9 items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-2.5 text-xs font-medium text-zinc-600 transition-all hover:bg-zinc-100 hover:text-zinc-900 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 shadow-xs"
+            className="flex h-9 items-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-2.5 text-xs font-medium text-zinc-600 transition-all hover:bg-zinc-100 hover:text-zinc-900 active:scale-95 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 shadow-xs cursor-pointer"
           >
             <span className="hidden sm:inline">Tour</span>
           </button>}

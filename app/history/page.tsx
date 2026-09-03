@@ -8,6 +8,7 @@ import { useTheme } from '@/context/ThemeContext';
 import Header from '@/components/header';
 import DocumentPreviewModal from '@/components/document-preview-modal';
 import { generatePDF, generateDOCX, mergeWithBonafide } from '@/lib/document-generator';
+import { getUserLabRecords, deleteLabRecord } from '@/lib/record-service';
 import { SavedRecord } from '@/types/record';
 import {
   History,
@@ -50,14 +51,16 @@ export default function HistoryPage() {
     }
   }, [user, loading, router]);
 
-  // Load history records from localStorage with backward-compatible normalization
+  // Load history records from localStorage and sync from Firestore
   useEffect(() => {
+    let localNormalized: SavedRecord[] = [];
+
     try {
       const stored = localStorage.getItem('labora_records_history');
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          const normalized: SavedRecord[] = parsed.map((item: any, idx: number) => {
+          localNormalized = parsed.map((item: any, idx: number) => {
             const timestamp = item.updatedAt || item.createdAt || new Date().toISOString();
             const fallbackName =
               item.courseTitle ||
@@ -83,13 +86,78 @@ export default function HistoryPage() {
               updatedAt: timestamp,
             };
           });
-          setRecords(normalized);
+          setRecords(localNormalized);
         }
       }
     } catch (e) {
-      console.error('Failed to load history:', e);
+      console.error('Failed to load local history:', e);
     }
-  }, []);
+
+    // If authenticated, sync with Firestore records
+    if (user?.uid) {
+      getUserLabRecords(user.uid)
+        .then((cloudDocs) => {
+          if (!cloudDocs || cloudDocs.length === 0) return;
+
+          const cloudRecords: SavedRecord[] = cloudDocs.map((doc) => {
+            const fullTitle = doc.courseCode
+              ? `${doc.courseCode} - ${doc.courseTitle}`
+              : doc.courseTitle || 'Untitled Record';
+            return {
+              id: doc.id || `cloud-${Date.now()}`,
+              recordName: fullTitle,
+              courseTitle: fullTitle,
+              studentName: doc.studentName || '',
+              registerNumber: doc.registerNumber || '',
+              experiments: (doc.experiments || []).map((exp, idx) => ({
+                id: `exp-${exp.experimentNo || idx + 1}`,
+                title: exp.title || '',
+                date: exp.date || '',
+                githubLink: exp.githubUrl || '',
+              })),
+              updatedAt: doc.updatedAt || doc.createdAt || new Date().toISOString(),
+            };
+          });
+
+          // Merge cloud records with local records
+          const mergedMap = new Map<string, SavedRecord>();
+
+          // Cloud records take authority
+          cloudRecords.forEach((r) => {
+            mergedMap.set(String(r.id), r);
+          });
+
+          // Retain local records if not yet on cloud
+          localNormalized.forEach((local) => {
+            const alreadyExists = cloudRecords.some(
+              (c) =>
+                c.id === local.id ||
+                (c.courseTitle.trim().toLowerCase() === local.courseTitle.trim().toLowerCase() &&
+                  c.registerNumber.trim().toLowerCase() === local.registerNumber.trim().toLowerCase())
+            );
+            if (!alreadyExists) {
+              mergedMap.set(String(local.id), local);
+            }
+          });
+
+          const mergedList = Array.from(mergedMap.values()).sort((a, b) => {
+            const timeA = new Date(a.updatedAt || 0).getTime();
+            const timeB = new Date(b.updatedAt || 0).getTime();
+            return timeB - timeA;
+          });
+
+          setRecords(mergedList);
+          try {
+            localStorage.setItem('labora_records_history', JSON.stringify(mergedList));
+          } catch (storageErr) {
+            console.warn('Failed to cache merged history:', storageErr);
+          }
+        })
+        .catch((err) => {
+          console.warn('Could not fetch cloud records from Firestore:', err);
+        });
+    }
+  }, [user]);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -106,6 +174,12 @@ export default function HistoryPage() {
       showToast('Record removed from history.');
     } catch (e) {
       console.error('Failed to update history storage:', e);
+    }
+
+    if (user?.uid && !id.startsWith('rec-local-')) {
+      deleteLabRecord(user.uid, id).catch((err) => {
+        console.warn('Could not delete record from Firestore:', err);
+      });
     }
   };
 

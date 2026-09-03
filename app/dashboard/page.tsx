@@ -8,6 +8,7 @@ import Header from '@/components/header';
 import DocumentPreviewModal from '@/components/document-preview-modal';
 import WorkspaceTour from '@/components/workspace-tour';
 import { generatePDF, generateDOCX, mergeWithBonafide } from '@/lib/document-generator';
+import { saveLabRecord, parseCourseInfo } from '@/lib/record-service';
 import {
   Plus,
   Trash2,
@@ -63,6 +64,7 @@ export default function DashboardPage() {
   const [rememberBonafideChoice, setRememberBonafideChoice] = useState(false);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [isDocxGenerating, setIsDocxGenerating] = useState(false);
+  const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [toast, setToast] = useState<{ message: string; hasPostActions?: boolean } | null>(null);
   const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -252,16 +254,17 @@ export default function DashboardPage() {
     );
   };
 
-  // Pure Input Data History Saver (Updates existing record or creates new one)
-  const saveInputDataToHistory = (silent = false): boolean => {
+  // Pure Input Data History Saver (Updates local history & persists pure text metadata to Firestore)
+  const saveInputDataToHistory = async (silent = false): Promise<boolean> => {
     if (!isFormValid) {
       if (!silent) showToast('Fill all required fields before saving.');
       return false;
     }
 
     try {
+      let currentId = String(activeRecordId);
       const recordPayload: SavedRecord = {
-        id: String(activeRecordId),
+        id: currentId,
         recordName: courseTitle.trim() || 'Untitled Record',
         courseTitle: courseTitle.trim(),
         studentName: studentName.trim(),
@@ -284,7 +287,7 @@ export default function DashboardPage() {
       const normalizedReg = registerNumber.trim().toLowerCase();
 
       const existingIndex = existingHistory.findIndex((r) => {
-        if (String(r.id) === String(activeRecordId)) return true;
+        if (String(r.id) === currentId) return true;
         if (
           normalizedCourse &&
           normalizedReg &&
@@ -299,8 +302,9 @@ export default function DashboardPage() {
       let updatedList: SavedRecord[];
       if (existingIndex >= 0) {
         // Keep the canonical ID so subsequent edits match consistently
-        const targetId = String(existingHistory[existingIndex].id || activeRecordId);
+        const targetId = String(existingHistory[existingIndex].id || currentId);
         recordPayload.id = targetId;
+        currentId = targetId;
         if (String(activeRecordId) !== targetId) {
           setActiveRecordId(targetId);
         }
@@ -313,10 +317,54 @@ export default function DashboardPage() {
       }
 
       localStorage.setItem('labora_records_history', JSON.stringify(updatedList));
-      if (!silent) showToast('Record saved to History!', true);
+
+      // Asynchronously persist pure text metadata to Firestore under users/{userId}/records
+      if (user?.uid) {
+        if (!silent) setIsSavingToCloud(true);
+        try {
+          const { courseCode, courseTitle: parsedTitle } = parseCourseInfo(courseTitle);
+          const cloudDocId = await saveLabRecord(
+            user.uid,
+            {
+              userEmail: user.email,
+              studentName: studentName.trim(),
+              registerNumber: registerNumber.trim(),
+              courseCode,
+              courseTitle: parsedTitle || courseTitle.trim(),
+              recordDate: experiments[0]?.date || new Date().toISOString().split('T')[0],
+              experiments: experiments.map((exp, idx) => ({
+                experimentNo: idx + 1,
+                title: exp.title.trim(),
+                date: exp.date.trim(),
+                githubUrl: exp.githubLink.trim(),
+              })),
+            },
+            currentId.startsWith('rec-') ? undefined : currentId
+          );
+
+          if (cloudDocId && cloudDocId !== currentId) {
+            setActiveRecordId(cloudDocId);
+            const syncedList = updatedList.map((r) =>
+              r.id === currentId ? { ...r, id: cloudDocId } : r
+            );
+            localStorage.setItem('labora_records_history', JSON.stringify(syncedList));
+          }
+
+          if (!silent) showToast('Record details saved to cloud & history!', true);
+        } catch (cloudErr) {
+          console.warn('Firestore cloud sync notice:', cloudErr);
+          if (!silent) showToast('Record saved to History!', true);
+        } finally {
+          if (!silent) setIsSavingToCloud(false);
+        }
+      } else {
+        if (!silent) showToast('Record saved to History!', true);
+      }
+
       return true;
     } catch (e) {
       console.error('Failed to save record to history:', e);
+      if (!silent) showToast('Failed to save record.');
       return false;
     }
   };
@@ -730,17 +778,21 @@ export default function DashboardPage() {
               {/* Direct Save to History Button */}
               <button
                 onClick={() => saveInputDataToHistory(false)}
-                disabled={!isFormValid}
+                disabled={!isFormValid || isSavingToCloud}
                 type="button"
-                title={!isFormValid ? 'Fill required fields to save' : 'Save inputs to history'}
+                title={!isFormValid ? 'Fill required fields to save' : 'Save inputs to history & cloud'}
                 className={`inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs sm:text-sm font-semibold transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 ${
                   isDark
                     ? 'border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
                     : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
                 }`}
               >
-                <Bookmark className="h-4 w-4 text-zinc-400" />
-                <span>Save Record</span>
+                {isSavingToCloud ? (
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                ) : (
+                  <Bookmark className="h-4 w-4 text-zinc-400" />
+                )}
+                <span>{isSavingToCloud ? 'Saving...' : 'Save Record'}</span>
               </button>
 
               {/* Preview Button */}
