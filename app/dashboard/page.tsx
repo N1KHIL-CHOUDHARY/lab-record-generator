@@ -8,14 +8,15 @@ import Header from '@/components/header';
 import DocumentPreviewModal from '@/components/document-preview-modal';
 import WorkspaceTour from '@/components/workspace-tour';
 import { generatePDF, generateDOCX, mergeWithBonafide } from '@/lib/document-generator';
-import { saveLabRecord, parseCourseInfo } from '@/lib/record-service';
+import { getLabRecord, parseCourseInfo } from '@/lib/record-service';
+import { db } from '@/lib/firebase';
+import { doc, setDoc, addDoc, collection } from 'firebase/firestore';
 import {
   Plus,
   Trash2,
   Eye,
   Download,
   FileText,
-  Bookmark,
   Check,
   Loader2,
   AlertCircle,
@@ -24,10 +25,11 @@ import {
 } from 'lucide-react';
 
 export interface Experiment {
-  id: string;
+  id?: string;
+  experimentNo: number;
   title: string;
   date: string;
-  githubLink: string;
+  githubUrl: string;
 }
 
 export interface SavedRecord {
@@ -45,7 +47,10 @@ export default function DashboardPage() {
   const { isDark } = useTheme();
   const router = useRouter();
 
-  const [activeRecordId, setActiveRecordId] = useState<string>(() => `rec-${Date.now()}`);
+  // Active Firestore Record Identifier
+  const [currentRecordId, setCurrentRecordId] = useState<string | null>(null);
+
+  // Form Fields State
   const [courseTitle, setCourseTitle] = useState('');
   const [studentName, setStudentName] = useState('');
   const [registerNumber, setRegisterNumber] = useState('');
@@ -53,114 +58,212 @@ export default function DashboardPage() {
   const [experiments, setExperiments] = useState<Experiment[]>([
     {
       id: 'exp-1',
+      experimentNo: 1,
       title: '',
       date: '',
-      githubLink: '',
+      githubUrl: '',
     },
   ]);
 
+  // Sync & Load States
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isRecordLoading, setIsRecordLoading] = useState(false);
+  const [isHydrated, setIsHydrated] = useState(false);
+
+  // Modal & Generation States
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [showBonafideModal, setShowBonafideModal] = useState(false);
   const [rememberBonafideChoice, setRememberBonafideChoice] = useState(false);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [isDocxGenerating, setIsDocxGenerating] = useState(false);
-  const [isSavingToCloud, setIsSavingToCloud] = useState(false);
   const [toast, setToast] = useState<{ message: string; hasPostActions?: boolean } | null>(null);
-  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Hydration Guard State
-  const [isHydrated, setIsHydrated] = useState(false);
+  const toastTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedPayloadRef = useRef<string>('');
 
   const isFormValid = Boolean(
     courseTitle.trim() &&
     studentName.trim() &&
     registerNumber.trim() &&
     experiments.length > 0 &&
-    experiments.every((exp) => exp.title.trim() && exp.githubLink.trim())
+    experiments.every((exp) => exp.title.trim() && exp.githubUrl.trim())
   );
 
-  // Auth Guard
+  // Auth Guard & Firestore Record Loader
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return;
+    if (!user) {
       router.push('/login');
+      return;
+    }
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const idParam = searchParams.get('id');
+    const isExplicitNew = searchParams.get('new') === 'true';
+
+    if (idParam && !isExplicitNew) {
+      setIsRecordLoading(true);
+      getLabRecord(user.uid, idParam)
+        .then((docData) => {
+          if (docData) {
+            setCurrentRecordId(docData.id || idParam);
+
+            const displayTitle =
+              docData.courseCode &&
+              docData.courseTitle &&
+              !docData.courseTitle.includes(docData.courseCode)
+                ? `${docData.courseCode} - ${docData.courseTitle}`
+                : docData.courseTitle || docData.courseCode || '';
+
+            setCourseTitle(displayTitle);
+            setStudentName(docData.studentName || user.displayName || '');
+            setRegisterNumber(docData.registerNumber || '');
+
+            if (docData.experiments && docData.experiments.length > 0) {
+              setExperiments(
+                docData.experiments.map((exp, idx) => ({
+                  id: `exp-${idx + 1}`,
+                  experimentNo: exp.experimentNo || idx + 1,
+                  title: exp.title || '',
+                  date: exp.date || '',
+                  githubUrl: exp.githubUrl || '',
+                }))
+              );
+            }
+
+            const initialPayload = JSON.stringify({
+              courseTitle: displayTitle.trim(),
+              studentName: (docData.studentName || user.displayName || '').trim(),
+              registerNumber: (docData.registerNumber || '').trim(),
+              experiments: (docData.experiments || []).map((exp, idx) => ({
+                experimentNo: idx + 1,
+                title: (exp.title || '').trim(),
+                date: exp.date || '',
+                githubUrl: (exp.githubUrl || '').trim(),
+              })),
+            });
+            lastSavedPayloadRef.current = initialPayload;
+            setSyncStatus('saved');
+          } else {
+            showToast('Record not found. Starting clean record.');
+            setCurrentRecordId(null);
+            if (user.displayName) setStudentName(user.displayName);
+          }
+        })
+        .catch((err) => {
+          console.error('Failed to load record from Firestore:', err);
+          showToast('Failed to load record from cloud.');
+        })
+        .finally(() => {
+          setIsInitialLoad(false);
+          setIsRecordLoading(false);
+          setIsHydrated(true);
+        });
+    } else {
+      if (isExplicitNew) {
+        window.history.replaceState({}, '', '/dashboard');
+      }
+      setCurrentRecordId(null);
+      if (user.displayName) {
+        setStudentName(user.displayName);
+      }
+      setIsInitialLoad(false);
+      setIsHydrated(true);
     }
   }, [user, loading, router]);
 
-  // Single Mount Restoration Hook with Hydration Guard
+  // Real-Time Debounced Firestore Auto-Save
   useEffect(() => {
-    try {
-      const searchParams = new URLSearchParams(window.location.search);
-      const isExplicitNew = searchParams.get('new') === 'true';
+    if (!user?.uid || isInitialLoad || isRecordLoading || !db) return;
 
-      if (isExplicitNew) {
-        const freshId = `rec-${Date.now()}`;
-        setActiveRecordId(freshId);
-        setCourseTitle('');
-        setRegisterNumber('');
-        if (user?.displayName) {
-          setStudentName(user.displayName);
-        } else {
-          setStudentName('');
-        }
-        setExperiments([
-          {
-            id: 'exp-1',
-            title: '',
-            date: '',
-            githubLink: '',
-          },
-        ]);
-        localStorage.removeItem('labora_active_workspace');
-        window.history.replaceState({}, '', '/dashboard');
-      } else {
-        const savedDraft = localStorage.getItem('labora_active_workspace');
-        if (savedDraft) {
-          const parsed = JSON.parse(savedDraft);
-          if (parsed.id) {
-            setActiveRecordId(String(parsed.id));
-          }
-          if (parsed.courseTitle) setCourseTitle(parsed.courseTitle);
-          // Prioritize saved draft studentName; fallback to user?.displayName only if draft studentName is empty
-          if (parsed.studentName) {
-            setStudentName(parsed.studentName);
-          } else if (user?.displayName) {
-            setStudentName(user.displayName);
-          }
-          if (parsed.registerNumber) setRegisterNumber(parsed.registerNumber);
-          if (Array.isArray(parsed.experiments) && parsed.experiments.length > 0) {
-            setExperiments(parsed.experiments);
-          }
-        } else if (user?.displayName) {
-          setStudentName(user.displayName);
-        }
-      }
-    } catch (e) {
-      console.error('Failed to restore workspace draft:', e);
-    } finally {
-      setIsHydrated(true);
+    // Check if form contains minimum content to justify saving
+    const hasContent =
+      courseTitle.trim() ||
+      experiments.some((e) => e.title.trim());
+    if (!hasContent) return;
+
+    const payloadObj = {
+      courseTitle: courseTitle.trim(),
+      studentName: studentName.trim(),
+      registerNumber: registerNumber.trim(),
+      experiments: experiments.map((exp, idx) => ({
+        experimentNo: idx + 1,
+        title: exp.title.trim(),
+        date: exp.date,
+        githubUrl: exp.githubUrl.trim(),
+      })),
+    };
+
+    const payloadString = JSON.stringify(payloadObj);
+    if (payloadString === lastSavedPayloadRef.current) {
+      return;
     }
-  }, []);
 
-  // Save to active workspace cache (only after hydration)
-  useEffect(() => {
-    if (!isHydrated) return;
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
 
-    try {
-      localStorage.setItem(
-        'labora_active_workspace',
-        JSON.stringify({
-          id: activeRecordId,
-          courseTitle,
-          studentName,
-          registerNumber,
-          experiments,
+    debounceTimerRef.current = setTimeout(async () => {
+      if (!db) return;
+      setSyncStatus('saving');
+      try {
+        const { courseCode, courseTitle: parsedTitle } = parseCourseInfo(courseTitle);
+        const payload = {
+          courseCode,
+          courseTitle: parsedTitle || courseTitle.trim(),
+          studentName: studentName.trim(),
+          registerNumber: registerNumber.trim(),
+          recordDate: experiments[0]?.date || new Date().toISOString().split('T')[0],
+          experiments: experiments.map((exp, idx) => ({
+            experimentNo: idx + 1,
+            title: exp.title.trim(),
+            date: exp.date,
+            githubUrl: exp.githubUrl.trim(),
+          })),
           updatedAt: new Date().toISOString(),
-        })
-      );
-    } catch (e) {
-      console.error('Failed to cache active workspace:', e);
-    }
-  }, [isHydrated, activeRecordId, courseTitle, studentName, registerNumber, experiments]);
+        };
+
+        if (currentRecordId) {
+          // Update active record in place
+          await setDoc(doc(db, 'users', user.uid, 'records', currentRecordId), payload, {
+            merge: true,
+          });
+          lastSavedPayloadRef.current = payloadString;
+          setSyncStatus('saved');
+        } else {
+          // Create new record document and lock ID to prevent duplicate document spam
+          const docRef = await addDoc(collection(db, 'users', user.uid, 'records'), {
+            ...payload,
+            createdAt: new Date().toISOString(),
+          });
+          lastSavedPayloadRef.current = payloadString;
+          setCurrentRecordId(docRef.id);
+          window.history.replaceState({}, '', `/dashboard?id=${docRef.id}`);
+          setSyncStatus('saved');
+        }
+      } catch (error) {
+        console.error('Auto-save error:', error);
+        setSyncStatus('error');
+      }
+    }, 1200);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [
+    courseTitle,
+    studentName,
+    registerNumber,
+    experiments,
+    user?.uid,
+    currentRecordId,
+    isInitialLoad,
+    isRecordLoading,
+  ]);
 
   const showToast = (message: string, hasPostActions = false) => {
     if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
@@ -170,50 +273,37 @@ export default function DashboardPage() {
     }, 4500);
   };
 
-  // Top-Level and Post-Export New Record Initializer
+  // "New Record" / Reset Action
   const handleStartNewRecord = () => {
-    // If the current record is valid, ensure it is safely written to history before clearing
-    if (isFormValid) {
-      saveInputDataToHistory(true);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
     }
 
-    const newId = `rec-${Date.now()}`;
     const cleanExperiments: Experiment[] = [
       {
         id: 'exp-1',
+        experimentNo: 1,
         title: '',
         date: '',
-        githubLink: '',
+        githubUrl: '',
       },
     ];
 
-    setActiveRecordId(newId);
+    setCurrentRecordId(null);
     setCourseTitle('');
     setRegisterNumber('');
     setExperiments(cleanExperiments);
+    setSyncStatus('idle');
+    lastSavedPayloadRef.current = '';
 
-    // Retain studentName from user profile or active session
-    const preservedName = studentName.trim() || user?.displayName || '';
-    if (!studentName && preservedName) {
-      setStudentName(preservedName);
+    if (user?.displayName) {
+      setStudentName(user.displayName);
+    } else {
+      setStudentName('');
     }
 
-    try {
-      localStorage.setItem(
-        'labora_active_workspace',
-        JSON.stringify({
-          id: newId,
-          courseTitle: '',
-          studentName: preservedName,
-          registerNumber: '',
-          experiments: cleanExperiments,
-          updatedAt: new Date().toISOString(),
-        })
-      );
-    } catch (e) {
-      console.error('Failed to update workspace for new record:', e);
-    }
-
+    window.history.replaceState({}, '', '/dashboard');
     showToast('Clean record template ready.', false);
   };
 
@@ -227,26 +317,33 @@ export default function DashboardPage() {
   const handleAddExperiment = () => {
     const newExp: Experiment = {
       id: `exp-${Date.now()}`,
+      experimentNo: experiments.length + 1,
       title: '',
       date: '',
-      githubLink: '',
+      githubUrl: '',
     };
     setExperiments((prev) => [...prev, newExp]);
   };
 
-  const handleDeleteExperiment = (id: string) => {
+  const handleDeleteExperiment = (index: number) => {
     if (experiments.length <= 1) return;
-    setExperiments((prev) => prev.filter((exp) => exp.id !== id));
+    setExperiments((prev) => {
+      const filtered = prev.filter((_, idx) => idx !== index);
+      return filtered.map((exp, idx) => ({
+        ...exp,
+        experimentNo: idx + 1,
+      }));
+    });
   };
 
   const handleUpdateExperiment = (
-    id: string,
-    field: 'title' | 'date' | 'githubLink',
+    index: number,
+    field: 'title' | 'date' | 'githubUrl',
     value: string
   ) => {
     setExperiments((prev) =>
-      prev.map((exp) => {
-        if (exp.id === id) {
+      prev.map((exp, idx) => {
+        if (idx === index) {
           return { ...exp, [field]: value };
         }
         return exp;
@@ -254,139 +351,27 @@ export default function DashboardPage() {
     );
   };
 
-  // Pure Input Data History Saver (Updates local history & persists pure text metadata to Firestore)
-  const saveInputDataToHistory = async (silent = false): Promise<boolean> => {
-    if (!isFormValid) {
-      if (!silent) showToast('Fill all required fields before saving.');
-      return false;
-    }
-
-    try {
-      let currentId = String(activeRecordId);
-      const recordPayload: SavedRecord = {
-        id: currentId,
-        recordName: courseTitle.trim() || 'Untitled Record',
-        courseTitle: courseTitle.trim(),
-        studentName: studentName.trim(),
-        registerNumber: registerNumber.trim(),
-        experiments: experiments.map((e) => ({
-          id: e.id,
-          title: e.title.trim(),
-          date: e.date.trim(),
-          githubLink: e.githubLink.trim(),
-        })),
-        updatedAt: new Date().toISOString(),
-      };
-
-      const existingHistory: SavedRecord[] = JSON.parse(
-        localStorage.getItem('labora_records_history') || '[]'
-      );
-
-      // Upsert: Find by exact ID or fallback to matching courseTitle + registerNumber
-      const normalizedCourse = courseTitle.trim().toLowerCase();
-      const normalizedReg = registerNumber.trim().toLowerCase();
-
-      const existingIndex = existingHistory.findIndex((r) => {
-        if (String(r.id) === currentId) return true;
-        if (
-          normalizedCourse &&
-          normalizedReg &&
-          r.courseTitle?.trim().toLowerCase() === normalizedCourse &&
-          r.registerNumber?.trim().toLowerCase() === normalizedReg
-        ) {
-          return true;
-        }
-        return false;
-      });
-
-      let updatedList: SavedRecord[];
-      if (existingIndex >= 0) {
-        // Keep the canonical ID so subsequent edits match consistently
-        const targetId = String(existingHistory[existingIndex].id || currentId);
-        recordPayload.id = targetId;
-        currentId = targetId;
-        if (String(activeRecordId) !== targetId) {
-          setActiveRecordId(targetId);
-        }
-
-        updatedList = [...existingHistory];
-        updatedList[existingIndex] = recordPayload;
-      } else {
-        // Prepend brand new entry, limit history to 50
-        updatedList = [recordPayload, ...existingHistory.slice(0, 49)];
-      }
-
-      localStorage.setItem('labora_records_history', JSON.stringify(updatedList));
-
-      // Asynchronously persist pure text metadata to Firestore under users/{userId}/records
-      if (user?.uid) {
-        if (!silent) setIsSavingToCloud(true);
-        try {
-          const { courseCode, courseTitle: parsedTitle } = parseCourseInfo(courseTitle);
-          const cloudDocId = await saveLabRecord(
-            user.uid,
-            {
-              userEmail: user.email,
-              studentName: studentName.trim(),
-              registerNumber: registerNumber.trim(),
-              courseCode,
-              courseTitle: parsedTitle || courseTitle.trim(),
-              recordDate: experiments[0]?.date || new Date().toISOString().split('T')[0],
-              experiments: experiments.map((exp, idx) => ({
-                experimentNo: idx + 1,
-                title: exp.title.trim(),
-                date: exp.date.trim(),
-                githubUrl: exp.githubLink.trim(),
-              })),
-            },
-            currentId.startsWith('rec-') ? undefined : currentId
-          );
-
-          if (cloudDocId && cloudDocId !== currentId) {
-            setActiveRecordId(cloudDocId);
-            const syncedList = updatedList.map((r) =>
-              r.id === currentId ? { ...r, id: cloudDocId } : r
-            );
-            localStorage.setItem('labora_records_history', JSON.stringify(syncedList));
-          }
-
-          if (!silent) showToast('Record details saved to cloud & history!', true);
-        } catch (cloudErr) {
-          console.warn('Firestore cloud sync notice:', cloudErr);
-          if (!silent) showToast('Record saved to History!', true);
-        } finally {
-          if (!silent) setIsSavingToCloud(false);
-        }
-      } else {
-        if (!silent) showToast('Record saved to History!', true);
-      }
-
-      return true;
-    } catch (e) {
-      console.error('Failed to save record to history:', e);
-      if (!silent) showToast('Failed to save record.');
-      return false;
-    }
-  };
-
-  // 1. Preview Handler (Saves pure inputs then opens modal)
+  // Preview Handler
   const handlePreviewClick = () => {
     if (!isFormValid) return;
-    saveInputDataToHistory(true);
     setIsPreviewOpen(true);
   };
 
-  // 2. PDF Download Handler (Saves pure inputs then generates PDF)
+  // PDF Download Handler
   const executePdfDownload = async (withBonafide: boolean) => {
     setIsPdfGenerating(true);
-    saveInputDataToHistory(true);
 
     try {
       const documentData = {
-        courseTitle,
-        studentName,
-        registerNumber,
-        experiments,
+        courseTitle: courseTitle.trim(),
+        studentName: studentName.trim(),
+        registerNumber: registerNumber.trim(),
+        experiments: experiments.map((exp, idx) => ({
+          id: exp.id || `exp-${idx + 1}`,
+          title: exp.title.trim(),
+          date: exp.date,
+          githubLink: exp.githubUrl.trim(),
+        })),
       };
 
       if (withBonafide) {
@@ -395,7 +380,7 @@ export default function DashboardPage() {
           const mergedBlob = await mergeWithBonafide(basePdfBlob);
           const link = document.createElement('a');
           link.href = URL.createObjectURL(mergedBlob);
-          link.download = `${courseTitle || 'document'}.pdf`;
+          link.download = `${courseTitle.trim() || 'document'}.pdf`;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
@@ -405,7 +390,7 @@ export default function DashboardPage() {
         await generatePDF(documentData, false);
       }
 
-      showToast('PDF downloaded & record saved to History!', true);
+      showToast('PDF downloaded successfully!', true);
     } catch (e) {
       console.error('PDF generation failed:', e);
       showToast('Failed to generate PDF.');
@@ -445,23 +430,27 @@ export default function DashboardPage() {
     await executePdfDownload(withBonafide);
   };
 
-  // 3. DOCX Download Handler (Saves pure inputs then generates DOCX)
+  // DOCX Download Handler
   const handleDownloadDocx = async () => {
     if (!isFormValid) {
       showToast('Please fill all required fields before generating DOCX.');
       return;
     }
     setIsDocxGenerating(true);
-    saveInputDataToHistory(true);
 
     try {
       await generateDOCX({
-        courseTitle,
-        studentName,
-        registerNumber,
-        experiments,
+        courseTitle: courseTitle.trim(),
+        studentName: studentName.trim(),
+        registerNumber: registerNumber.trim(),
+        experiments: experiments.map((exp, idx) => ({
+          id: exp.id || `exp-${idx + 1}`,
+          title: exp.title.trim(),
+          date: exp.date,
+          githubLink: exp.githubUrl.trim(),
+        })),
       });
-      showToast('DOCX downloaded & record saved to History!', true);
+      showToast('DOCX downloaded successfully!', true);
     } catch (e) {
       console.error('DOCX generation failed:', e);
       showToast('Failed to generate DOCX.');
@@ -470,7 +459,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading || !user || !isHydrated) {
+  if (loading || !user || !isHydrated || isRecordLoading) {
     return (
       <div
         className={`min-h-screen flex items-center justify-center ${
@@ -480,7 +469,7 @@ export default function DashboardPage() {
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
           <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
-            Verifying workspace session...
+            {isRecordLoading ? 'Loading record from cloud...' : 'Verifying workspace session...'}
           </p>
         </div>
       </div>
@@ -493,10 +482,10 @@ export default function DashboardPage() {
         isDark ? 'bg-zinc-950 text-zinc-100' : 'bg-zinc-50 text-zinc-900'
       }`}
     >
-      <Header check={true}/>
+      <Header check={true} />
       <WorkspaceTour />
 
-      {/* Interactive Post-Export Toast Notification (Theme Aware) */}
+      {/* Toast Notification */}
       {toast && (
         <div
           role="status"
@@ -566,7 +555,27 @@ export default function DashboardPage() {
 
       <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-8 sm:px-6">
         <div className="mb-6 flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-bold tracking-tight">Document Details</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold tracking-tight">Document Details</h1>
+
+            {/* Subtle text-only status indicator (no colored badge/pill) */}
+            {syncStatus === 'saving' && (
+              <span className="text-xs text-zinc-400 dark:text-zinc-500 animate-pulse">
+                saving...
+              </span>
+            )}
+            {syncStatus === 'saved' && (
+              <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                saved
+              </span>
+            )}
+            {syncStatus === 'error' && (
+              <span className="text-xs text-rose-500">
+                failed to save
+              </span>
+            )}
+          </div>
+
           <button
             onClick={() => handleStartNewRecord()}
             type="button"
@@ -652,12 +661,12 @@ export default function DashboardPage() {
           </div>
 
           {experiments.map((exp, index) => {
-            const expNumberFormatted = String(index + 1).padStart(2, '0');
+            const expNumberFormatted = String(exp.experimentNo || index + 1).padStart(2, '0');
             const isOnlyOne = experiments.length === 1;
 
             return (
               <div
-                key={exp.id}
+                key={exp.id || `exp-${index}`}
                 id={index === 0 ? 'tour-exp-card-0' : undefined}
                 className={`rounded-2xl p-5 border shadow-sm transition-all hover:shadow-md ${
                   isDark
@@ -677,7 +686,7 @@ export default function DashboardPage() {
                   </div>
 
                   <button
-                    onClick={() => handleDeleteExperiment(exp.id)}
+                    onClick={() => handleDeleteExperiment(index)}
                     disabled={isOnlyOne}
                     type="button"
                     title={isOnlyOne ? 'At least one experiment is required' : 'Delete experiment'}
@@ -699,7 +708,7 @@ export default function DashboardPage() {
                     <input
                       type="text"
                       value={exp.title}
-                      onChange={(e) => handleUpdateExperiment(exp.id, 'title', e.target.value)}
+                      onChange={(e) => handleUpdateExperiment(index, 'title', e.target.value)}
                       placeholder="Enter Experiment Title"
                       className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 ${
                         isDark
@@ -717,7 +726,7 @@ export default function DashboardPage() {
                       <input
                         type="date"
                         value={exp.date || ''}
-                        onChange={(e) => handleUpdateExperiment(exp.id, 'date', e.target.value)}
+                        onChange={(e) => handleUpdateExperiment(index, 'date', e.target.value)}
                         className={`w-full px-3.5 py-2 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 ${
                           isDark
                             ? 'bg-zinc-900 border-zinc-800 text-zinc-100'
@@ -732,9 +741,9 @@ export default function DashboardPage() {
                       </label>
                       <input
                         type="url"
-                        value={exp.githubLink}
+                        value={exp.githubUrl}
                         onChange={(e) =>
-                          handleUpdateExperiment(exp.id, 'githubLink', e.target.value)
+                          handleUpdateExperiment(index, 'githubUrl', e.target.value)
                         }
                         placeholder="https://github.com/..."
                         className={`w-full px-3.5 py-2.5 rounded-xl border text-sm transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 ${
@@ -774,27 +783,7 @@ export default function DashboardPage() {
               isDark ? 'border-zinc-800 bg-zinc-900/60' : 'border-zinc-200 bg-white shadow-sm'
             }`}
           >
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {/* Direct Save to History Button */}
-              <button
-                onClick={() => saveInputDataToHistory(false)}
-                disabled={!isFormValid || isSavingToCloud}
-                type="button"
-                title={!isFormValid ? 'Fill required fields to save' : 'Save inputs to history & cloud'}
-                className={`inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border px-3 text-xs sm:text-sm font-semibold transition-all active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 ${
-                  isDark
-                    ? 'border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800'
-                    : 'border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-50'
-                }`}
-              >
-                {isSavingToCloud ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
-                ) : (
-                  <Bookmark className="h-4 w-4 text-zinc-400" />
-                )}
-                <span>{isSavingToCloud ? 'Saving...' : 'Save Record'}</span>
-              </button>
-
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               {/* Preview Button */}
               <button
                 onClick={() => handlePreviewClick()}
@@ -923,10 +912,15 @@ export default function DashboardPage() {
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
         isDark={isDark}
-        courseTitle={courseTitle}
+        courseTitle={courseTitle.trim()}
         studentName={studentName}
         registerNumber={registerNumber}
-        experiments={experiments}
+        experiments={experiments.map((exp, idx) => ({
+          id: exp.id || `exp-${idx + 1}`,
+          title: exp.title,
+          date: exp.date,
+          githubLink: exp.githubUrl,
+        }))}
       />
     </div>
   );

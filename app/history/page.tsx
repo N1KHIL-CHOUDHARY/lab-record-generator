@@ -197,37 +197,11 @@ export default function HistoryPage() {
   };
 
   const handleCreateNewRecord = () => {
-    try {
-      localStorage.removeItem('labora_active_workspace');
-      router.push('/dashboard?new=true');
-    } catch (e) {
-      console.error('Failed to prepare new record workspace:', e);
-      router.push('/dashboard?new=true');
-    }
+    router.push('/dashboard?new=true');
   };
 
   const handleOpenInEditor = (record: SavedRecord) => {
-    try {
-      localStorage.setItem(
-        'labora_active_workspace',
-        JSON.stringify({
-          id: String(record.id),
-          courseTitle: record.courseTitle,
-          studentName: record.studentName,
-          registerNumber: record.registerNumber,
-          experiments: record.experiments.map((exp, i) => ({
-            id: exp.id || `exp-${i + 1}`,
-            title: exp.title || '',
-            date: exp.date || '',
-            githubLink: exp.githubLink || '',
-          })),
-          updatedAt: new Date().toISOString(),
-        })
-      );
-      router.push('/dashboard');
-    } catch (e) {
-      console.error('Failed to set active workspace for edit:', e);
-    }
+    router.push(`/dashboard?id=${encodeURIComponent(record.id)}`);
   };
 
   // Preview Action

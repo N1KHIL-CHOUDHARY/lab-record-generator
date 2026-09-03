@@ -2,6 +2,7 @@ import { db } from '@/lib/firebase';
 import {
   collection,
   doc,
+  getDoc,
   getDocs,
   setDoc,
   addDoc,
@@ -143,4 +144,21 @@ export async function deleteLabRecord(userId: string, recordId: string): Promise
   if (!db || !userId || !recordId) return;
   const docRef = doc(db, 'users', userId, 'records', recordId);
   await deleteDoc(docRef);
+}
+
+/**
+ * Fetches a single lab record document from Firestore.
+ */
+export async function getLabRecord(
+  userId: string,
+  recordId: string
+): Promise<LabRecordDocument | null> {
+  if (!db || !userId || !recordId) return null;
+  const docRef = doc(db, 'users', userId, 'records', recordId);
+  const snap = await getDoc(docRef);
+  if (!snap.exists()) return null;
+  return {
+    id: snap.id,
+    ...(snap.data() as Omit<LabRecordDocument, 'id'>),
+  };
 }
