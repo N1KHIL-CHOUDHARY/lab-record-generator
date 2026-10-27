@@ -92,7 +92,7 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
             className="text-[34px] sm:text-[50px] lg:text-[54px] font-bold tracking-tight text-neutral-950 leading-[1.14]"
           >
-            One workspace, from idea to ship
+            One workspace, from code to record.
           </motion.h1>
 
           {/* Subtitle */}
