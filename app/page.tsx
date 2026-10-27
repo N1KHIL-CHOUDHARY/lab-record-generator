@@ -56,18 +56,7 @@ export default function LandingPage() {
 
           {/* Nav Links */}
           <nav className="hidden sm:flex items-center gap-6 text-xs font-medium text-neutral-500">
-            <Link href="/" className="text-neutral-950 font-semibold transition-colors">
-              Product
-            </Link>
-            <Link href="/templates" className="hover:text-neutral-950 transition-colors">
-              Templates
-            </Link>
-            <Link href="/templates" className="hover:text-neutral-950 transition-colors">
-              Features
-            </Link>
-            <Link href="/templates" className="hover:text-neutral-950 transition-colors">
-              Changelog
-            </Link>
+            
           </nav>
 
           {/* Action CTAs */}
