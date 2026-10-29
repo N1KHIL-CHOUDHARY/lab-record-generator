@@ -30,36 +30,36 @@ export const TOUR_STEPS: TourStep[] = [
     targetId: 'tour-meta-form',
     title: '1. Course & Student Details',
     description:
-      'Fill in your Subject Title, Name, Register Number, and Date. This formats the official college header and declaration.',
-    icon: <FileSpreadsheet className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />,
+      'Fill in your Course Title, Student Name, and Register Number. This generates the official college header and declaration.',
+    icon: <FileSpreadsheet className="h-5 w-5 text-violet-600 dark:text-violet-400" />,
   },
   {
     targetId: 'tour-exp-card-0',
     title: '2. Experiments & Live QR Code',
     description:
-      'Enter the experiment title, date, and GitHub repo link. A scannable verification QR code generates instantly in your browser.',
-    icon: <QrCode className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />,
+      'Enter the experiment title, date, and GitHub repository link. High-resolution verification QR codes generate in real-time.',
+    icon: <QrCode className="h-5 w-5 text-violet-600 dark:text-violet-400" />,
   },
   {
     targetId: 'tour-add-btn',
     title: '3. Add More Experiments',
     description:
-      "Click '+ Add Experiment' to append new rows. Experiment numbers are automatically assigned sequentially.",
-    icon: <PlusCircle className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />,
+      "Click '+ Add Experiment' to append new rows. Experiment numbers and formatting are calculated sequentially.",
+    icon: <PlusCircle className="h-5 w-5 text-violet-600 dark:text-violet-400" />,
   },
   {
     targetId: 'tour-action-bar',
     title: '4. Preview & Export Document',
     description:
-      'Preview the exact college table format, then download ready-to-print PDFs or editable Word DOCX files with one click.',
-    icon: <DownloadCloud className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />,
+      'Preview the exact table formatting, then export ready-to-print PDFs or editable Word DOCX files with one click.',
+    icon: <DownloadCloud className="h-5 w-5 text-violet-600 dark:text-violet-400" />,
   },
   {
     targetId: 'tour-history-btn',
     title: '5. View Past Records',
     description:
-      'Access all previously generated lab records anytime from the History tab in your navigation header.',
-    icon: <History className="h-5 w-5 text-zinc-900 dark:text-zinc-100" />,
+      'Access, re-download, or edit any previously generated lab records anytime from the History tab.',
+    icon: <History className="h-5 w-5 text-violet-600 dark:text-violet-400" />,
   },
 ];
 
@@ -107,7 +107,8 @@ export default function WorkspaceTour() {
       }
 
       // 3. Fallback: check localStorage
-      const completed = typeof window !== 'undefined' ? localStorage.getItem('labora_tour_completed') : null;
+      const completed =
+        typeof window !== 'undefined' ? localStorage.getItem('labora_tour_completed') : null;
       if (!completed && isMounted) {
         const timer = setTimeout(() => {
           if (isMounted) {
@@ -184,14 +185,12 @@ export default function WorkspaceTour() {
   }, [currentStep, isOpen, updateTargetRect]);
 
   const handleFinishTour = () => {
-    // 1. Immediately close tour and update local cache
     setIsOpen(false);
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('labora_force_tour');
       localStorage.setItem('labora_tour_completed', 'true');
     }
 
-    // 2. Persist completion to Firestore asynchronously if user is signed in
     if (user?.uid && db) {
       setDoc(
         doc(db, 'users', user.uid),
@@ -250,7 +249,7 @@ export default function WorkspaceTour() {
                   y={targetRect.top - 6}
                   width={targetRect.width + 12}
                   height={targetRect.height + 12}
-                  rx="16"
+                  rx="18"
                   fill="black"
                 />
               )}
@@ -261,13 +260,13 @@ export default function WorkspaceTour() {
             y="0"
             width="100%"
             height="100%"
-            fill="rgba(0, 0, 0, 0.5)"
+            fill="rgba(9, 9, 11, 0.55)"
             mask="url(#tour-spotlight-mask)"
             onClick={handleFinishTour}
           />
         </svg>
 
-        {/* Clean Neutral Focus Ring */}
+        {/* Focus Ring */}
         {targetRect && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -279,73 +278,76 @@ export default function WorkspaceTour() {
               height: targetRect.height + 12,
             }}
             transition={{ type: 'spring', stiffness: 350, damping: 32 }}
-            className="fixed pointer-events-none z-45 rounded-2xl ring-2 ring-zinc-900/90 dark:ring-zinc-100/90 shadow-[0_0_30px_rgba(0,0,0,0.2)] dark:shadow-[0_0_30px_rgba(255,255,255,0.15)]"
+            className="fixed pointer-events-none z-45 rounded-[18px] ring-2 ring-violet-500/80 dark:ring-violet-400/80 shadow-[0_0_30px_rgba(124,58,237,0.25)]"
           />
         )}
 
-        {/* Floating Modal Card Container (bottom-sheet on mobile, bottom-right floating card on PC) */}
+        {/* Floating Modal Card Container */}
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-end sm:items-end sm:justify-end p-4 sm:p-8 pointer-events-none">
           <motion.div
             key={currentStep}
-            initial={{ opacity: 0, y: 14, scale: 0.98 }}
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.98 }}
+            exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={{ duration: 0.22, ease: 'easeOut' }}
-            className="relative z-50 w-full max-w-md pointer-events-auto rounded-2xl border border-zinc-200 bg-white p-5 sm:p-6 text-zinc-900 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100"
+            className="relative z-50 w-full max-w-md pointer-events-auto rounded-3xl border border-neutral-200/90 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 p-5 sm:p-6 text-neutral-950 dark:text-neutral-50 shadow-[0_20px_50px_rgba(0,0,0,0.12)] backdrop-blur-md"
           >
             {/* Top Bar */}
-            <div className="flex items-center justify-between gap-3 mb-3.5">
-              <div className="inline-flex items-center gap-1.5 rounded-full bg-zinc-100 border border-zinc-200/90 px-2.5 py-1 text-[11px] font-semibold text-zinc-800 dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-200">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-violet-500/10 dark:bg-violet-400/10 border border-violet-500/20 px-2.5 py-1 text-[11px] font-bold text-violet-700 dark:text-violet-300">
+                <Sparkles className="h-3 w-3" />
                 <span>
-                  Step {currentStep + 1}
+                  Step {currentStep + 1} of {TOUR_STEPS.length}
                 </span>
               </div>
 
               <button
                 onClick={handleFinishTour}
                 type="button"
-                className="rounded-full p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition"
+                className="rounded-full p-1 text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-200 transition cursor-pointer"
                 title="Close tour"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            {/* Body */}
+            {/* Step Body */}
             <div className="flex items-start gap-3.5 mb-5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-zinc-100 border border-zinc-200 dark:bg-zinc-800 dark:border-zinc-700">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800 border border-neutral-200/70 dark:border-neutral-700/70">
                 {currentTour.icon}
               </div>
-              <div>
-                <h3 className="text-sm sm:text-base font-bold text-zinc-900 dark:text-zinc-100">
+              <div className="min-w-0">
+                <h3 className="text-sm sm:text-base font-bold text-neutral-950 dark:text-neutral-50 tracking-tight">
                   {currentTour.title}
                 </h3>
-                <p className="mt-1 text-xs sm:text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+                <p className="mt-1 text-xs sm:text-[13px] leading-relaxed text-neutral-600 dark:text-neutral-400">
                   {currentTour.description}
                 </p>
               </div>
             </div>
 
-            {/* Footer Controls */}
-            <div className="flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800 pt-3.5">
-              {/* Step Dots */}
+            {/* Footer Navigation */}
+            <div className="flex items-center justify-between border-t border-neutral-100 dark:border-neutral-800 pt-3.5">
+              {/* Progress dots */}
               <div className="flex items-center gap-1.5">
                 {TOUR_STEPS.map((_, idx) => (
                   <span
                     key={idx}
                     className={`h-1.5 rounded-full transition-all duration-200 ${
-                      idx === currentStep ? 'w-5 bg-zinc-900 dark:bg-zinc-100' : 'w-1.5 bg-zinc-200 dark:bg-zinc-700'
+                      idx === currentStep
+                        ? 'w-5 bg-neutral-950 dark:bg-neutral-50'
+                        : 'w-1.5 bg-neutral-200 dark:bg-neutral-700'
                     }`}
                   />
                 ))}
               </div>
 
-              {/* Buttons */}
+              {/* Action Buttons */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleFinishTour}
                   type="button"
-                  className="px-2.5 py-1.5 text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 transition"
+                  className="px-2.5 py-1.5 text-xs font-semibold text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200 transition cursor-pointer"
                 >
                   Skip
                 </button>
@@ -354,7 +356,7 @@ export default function WorkspaceTour() {
                   <button
                     onClick={handlePrev}
                     type="button"
-                    className="inline-flex items-center gap-1 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-zinc-100 active:scale-95 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                    className="inline-flex items-center gap-1 rounded-xl border border-neutral-200/90 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 px-3 py-1.5 text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition hover:bg-neutral-100 dark:hover:bg-neutral-750 active:scale-95 cursor-pointer"
                   >
                     <ArrowLeft className="h-3.5 w-3.5" />
                     <span>Back</span>
@@ -364,11 +366,11 @@ export default function WorkspaceTour() {
                 <button
                   onClick={handleNext}
                   type="button"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-zinc-900 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs transition hover:bg-zinc-800 active:scale-95 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-neutral-950 dark:bg-neutral-50 px-4 py-1.5 text-xs font-semibold text-white dark:text-neutral-950 shadow-xs transition hover:bg-neutral-800 dark:hover:bg-neutral-200 active:scale-95 cursor-pointer"
                 >
                   {currentStep === TOUR_STEPS.length - 1 ? (
                     <>
-                      <span>Finish</span>
+                      <span>Done</span>
                       <Check className="h-3.5 w-3.5" />
                     </>
                   ) : (
